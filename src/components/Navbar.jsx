@@ -1,0 +1,84 @@
+import React from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
+import NotificationCenter from './NotificationCenter';
+import { Layers, Sun, Moon, LogOut, Shield, School, Users, ChevronDown } from 'lucide-react';
+
+export default function Navbar() {
+  const { currentUser, logout } = useAuth();
+  const { theme, toggleTheme } = useApp();
+
+  return (
+    <nav className="glass-card sticky top-0 z-30 border-b border-slate-700/40 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xl">
+      {/* Brand & Logo */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/30 flex items-center justify-center">
+          <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+            <Layers className="w-5 h-5 text-indigo-400" />
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+              MST-ING Flow
+            </span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
+              v2.5 Enterprise
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 hidden sm:block">Onboarding & Orientation Workflow Platform</p>
+        </div>
+      </div>
+
+      {/* User Session & Actions */}
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/60 border border-slate-700/60 text-slate-300 hover:text-amber-300 transition-all focus:outline-none"
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+        >
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+
+        {/* Notifications */}
+        <NotificationCenter />
+
+        {/* Active User Card */}
+        {currentUser && (
+          <div className="flex items-center gap-3 pl-3 border-l border-slate-700/60">
+            <div className="relative">
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-9 h-9 rounded-full object-cover border-2 border-indigo-500/40 shadow-sm"
+              />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900" />
+            </div>
+
+            <div className="hidden md:block text-left">
+              <div className="text-xs font-bold text-slate-200 truncate max-w-[140px]">
+                {currentUser.name}
+              </div>
+              <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                {currentUser.role === 'Admin' && <Shield className="w-3 h-3 text-purple-400" />}
+                {currentUser.role === 'MST Member' && <Users className="w-3 h-3 text-indigo-400" />}
+                {currentUser.role === 'ING Member' && <School className="w-3 h-3 text-emerald-400" />}
+                <span>{currentUser.role === 'MST Member' ? (currentUser.mstRole || 'MST Member') : currentUser.role}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={logout}
+              className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all text-xs font-semibold flex items-center gap-1"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+}
