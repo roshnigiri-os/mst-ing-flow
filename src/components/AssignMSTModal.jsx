@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import confetti from 'canvas-confetti';
-import { X, UserCheck, CheckCircle2, Calendar, MessageSquare, CheckCheck, RefreshCw } from 'lucide-react';
+import { X, UserCheck, CheckCircle2, Calendar, MessageSquare } from 'lucide-react';
 
 export default function AssignMSTModal({ request, onClose }) {
   const { reviewAndAssignOrientation } = useApp();
@@ -10,10 +10,11 @@ export default function AssignMSTModal({ request, onClose }) {
 
   const mstUsers = users.filter(u => u.role === 'MST Member');
 
-  // Options: Orientation Completed, Orientation Scheduled, Orientation Switch
+  // Options: Orientation Scheduled, Orientation Completed, Orientation Switch, Orientation Pending
   const [status, setStatus] = useState(
     request.status === 'Orientation Completed' ? 'Orientation Completed' :
-    request.status === 'Orientation Switch' ? 'Orientation Switch' : 'Orientation Scheduled'
+    request.status === 'Orientation Switch' ? 'Orientation Switch' :
+    request.status === 'Orientation Pending' ? 'Orientation Pending' : 'Orientation Scheduled'
   );
   const [selectedMstIds, setSelectedMstIds] = useState(request.assignedMstMembers || [currentUser.id]);
   const [comment, setComment] = useState(request.rescheduleComment || '');
@@ -87,9 +88,10 @@ export default function AssignMSTModal({ request, onClose }) {
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             >
-              <option value="Orientation Scheduled">1. Orientation Scheduled</option>
-              <option value="Orientation Completed">2. Orientation Completed</option>
-              <option value="Orientation Switch">3. Orientation Switch</option>
+              <option value="Orientation Scheduled">Orientation Scheduled</option>
+              <option value="Orientation Completed">Orientation Completed</option>
+              <option value="Orientation Switch">Orientation Switch</option>
+              <option value="Orientation Pending">Orientation Pending</option>
             </select>
           </div>
 

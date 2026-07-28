@@ -17,8 +17,7 @@ import {
   FileSpreadsheet,
   Download,
   Plus,
-  FileText,
-  ChevronDown
+  FileText
 } from 'lucide-react';
 
 export default function MstDashboard() {
@@ -36,7 +35,7 @@ export default function MstDashboard() {
     if (activeNotificationRequest) {
       const found = requests.find(r => r.id === activeNotificationRequest);
       if (found) {
-        if (found.status === 'Orientation Scheduled' || found.status === 'Orientation Completed' || found.status === 'Orientation Switch' || found.status === 'Approved') {
+        if (found.status === 'Orientation Scheduled' || found.status === 'Orientation Completed' || found.status === 'Orientation Switch' || found.status === 'Orientation Pending' || found.status === 'Approved') {
           setAssigningRequest(found);
         } else {
           setActioningRequest(found);
@@ -79,7 +78,7 @@ export default function MstDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Status dropdown change handler (Status column after Account Details Sheet)
+  // Mid-table Status dropdown change handler (Options: Completed, Ongoing, On Hold, Issue)
   const handleOnboardingStatusChange = (request, newStatus) => {
     reviewAndAssignOrientation(
       request.id, 
@@ -90,7 +89,7 @@ export default function MstDashboard() {
     );
   };
 
-  // Orientation Actions dropdown change handler (Actions column at last)
+  // Final Actions dropdown change handler (Options: Orientation Scheduled, Orientation Completed, Orientation Switch, Orientation Pending)
   const handleOrientationActionChange = (request, actionChoice) => {
     if (actionChoice === 'Orientation Switch') {
       setAssigningRequest(request);
@@ -228,11 +227,11 @@ export default function MstDashboard() {
                 <th className="py-3 px-4">Program</th>
                 <th className="py-3 px-4">Onboarding Sheet (ING)</th>
                 <th className="py-3 px-4">Account Details Sheet</th>
-                {/* USER FEEDBACK REFINEMENT 1: Column named "Status" after Account Details Sheet */}
+                {/* Status Column after Account Details Sheet */}
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Requested Orientation Date</th>
                 <th className="py-3 px-4">Assigned Handlers</th>
-                {/* USER REFINEMENT 2: Final Actions Column */}
+                {/* Final Actions Column */}
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -297,14 +296,19 @@ export default function MstDashboard() {
                         )}
                       </td>
 
-                      {/* USER FEEDBACK REFINEMENT 1: Column named "Status" directly after Account Details Sheet with dropdown options: Completed, On Hold, Issue */}
+                      {/* MID-TABLE STATUS DROPDOWN: Options - Completed, Ongoing, On Hold, Issue */}
                       <td className="py-3 px-4">
                         <select
-                          value={currentStatus === 'Completed' || currentStatus === 'On Hold' || currentStatus === 'Issue' ? currentStatus : 'Completed'}
+                          value={
+                            currentStatus === 'Completed' || currentStatus === 'Ongoing' || currentStatus === 'On Hold' || currentStatus === 'Issue' 
+                              ? currentStatus 
+                              : 'Completed'
+                          }
                           onChange={(e) => handleOnboardingStatusChange(r, e.target.value)}
                           className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer"
                         >
                           <option value="Completed">Completed</option>
+                          <option value="Ongoing">Ongoing</option>
                           <option value="On Hold">On Hold</option>
                           <option value="Issue">Issue</option>
                         </select>
@@ -342,24 +346,23 @@ export default function MstDashboard() {
                         )}
                       </td>
 
-                      {/* USER REFINEMENT 2: Final Actions Column with Dropdown Options:
-                          1. Orientation Completed
-                          2. Orientation Scheduled
-                          3. Orientation Switch */}
+                      {/* FINAL ACTIONS DROPDOWN: Options - Orientation Scheduled, Orientation Completed, Orientation Switch, Orientation Pending */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <select
                             value={
                               r.status === 'Orientation Completed' ? 'Orientation Completed' :
                               r.status === 'Orientation Switch' || r.status === 'Timing Switch' ? 'Orientation Switch' :
+                              r.status === 'Orientation Pending' ? 'Orientation Pending' :
                               'Orientation Scheduled'
                             }
                             onChange={(e) => handleOrientationActionChange(r, e.target.value)}
                             className="px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-500/40 text-indigo-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md"
                           >
-                            <option value="Orientation Scheduled">1. Orientation Scheduled</option>
-                            <option value="Orientation Completed">2. Orientation Completed</option>
-                            <option value="Orientation Switch">3. Orientation Switch</option>
+                            <option value="Orientation Scheduled">Orientation Scheduled</option>
+                            <option value="Orientation Completed">Orientation Completed</option>
+                            <option value="Orientation Switch">Orientation Switch</option>
+                            <option value="Orientation Pending">Orientation Pending</option>
                           </select>
 
                           <button

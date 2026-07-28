@@ -6,7 +6,8 @@ import {
   CheckCheck, 
   PauseCircle, 
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  PlayCircle
 } from 'lucide-react';
 
 export default function StatusBadge({ status }) {
@@ -19,6 +20,12 @@ export default function StatusBadge({ status }) {
           label: 'Completed',
           className: 'badge-completed bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
           icon: CheckCircle2
+        };
+      case 'Ongoing':
+        return {
+          label: 'Ongoing',
+          className: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40',
+          icon: PlayCircle
         };
       case 'On Hold':
         return {
@@ -52,10 +59,11 @@ export default function StatusBadge({ status }) {
           className: 'badge-timing-switch bg-orange-500/20 text-orange-300 border border-orange-500/40',
           icon: RefreshCw
         };
+      case 'Orientation Pending':
       case 'Pending':
       default:
         return {
-          label: 'Pending',
+          label: statusKey === 'Orientation Pending' ? 'Orientation Pending' : 'Pending',
           className: 'badge-pending bg-slate-800 text-slate-300 border border-slate-700',
           icon: Clock
         };
