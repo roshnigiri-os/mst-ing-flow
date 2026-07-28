@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import StatCard from '../components/StatCard';
-import StatusBadge from '../components/StatusBadge';
 import AssignMSTModal from '../components/AssignMSTModal';
 import AttachDocumentModal from '../components/AttachDocumentModal';
 import ActionOnboardingModal from '../components/ActionOnboardingModal';
@@ -23,7 +22,13 @@ import {
 
 export default function MstDashboard() {
   const { currentUser, users } = useAuth();
-  const { requests, reviewAndAssignOrientation, activeNotificationRequest, setActiveNotificationRequest } = useApp();
+  const { 
+    requests, 
+    updateOnboardingStatus, 
+    updateOrientationStatus, 
+    activeNotificationRequest, 
+    setActiveNotificationRequest 
+  } = useApp();
 
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,11 +41,7 @@ export default function MstDashboard() {
     if (activeNotificationRequest) {
       const found = requests.find(r => r.id === activeNotificationRequest);
       if (found) {
-        if (found.status === 'Orientation Scheduled' || found.status === 'Orientation Completed' || found.status === 'Orientation Switch' || found.status === 'Orientation Pending' || found.status === 'Approved') {
-          setAssigningRequest(found);
-        } else {
-          setActioningRequest(found);
-        }
+        setAssigningRequest(found);
       }
       setActiveNotificationRequest(null);
     }
@@ -48,9 +49,9 @@ export default function MstDashboard() {
 
   // Metrics
   const totalRequests = requests.length;
-  const pendingOnboardingCount = requests.filter(r => r.status === 'Pending' || r.status === 'Ongoing').length;
-  const dateSubmittedCount = requests.filter(r => r.preferredDate !== null && r.status !== 'Orientation Completed').length;
-  const completedCount = requests.filter(r => r.status === 'Orientation Completed' || r.status === 'Completed').length;
+  const pendingOnboardingCount = requests.filter(r => r.onboardingStatus === 'Ongoing' || r.onboardingStatus === 'Pending').length;
+  const dateSubmittedCount = requests.filter(r => r.preferredDate !== null && r.orientationStatus !== 'Orientation Completed').length;
+  const completedCount = requests.filter(r => r.onboardingStatus === 'Completed' || r.orientationStatus === 'Orientation Completed').length;
 
   const filteredRequests = requests.filter(r => {
     const matchesSearch = 
@@ -60,9 +61,9 @@ export default function MstDashboard() {
 
     if (!matchesSearch) return false;
 
-    if (activeTab === 'pending') return r.status === 'Pending' || r.status === 'Ongoing';
-    if (activeTab === 'date-approval') return r.preferredDate !== null && r.status !== 'Orientation Completed';
-    if (activeTab === 'completed') return r.status === 'Orientation Completed' || r.status === 'Completed';
+    if (activeTab === 'pending') return r.onboardingStatus === 'Ongoing' || r.onboardingStatus === 'Pending';
+    if (activeTab === 'date-approval') return r.preferredDate !== null && r.orientationStatus !== 'Orientation Completed';
+    if (activeTab === 'completed') return r.onboardingStatus === 'Completed' || r.orientationStatus === 'Orientation Completed';
 
     return true;
   });
@@ -83,29 +84,17 @@ export default function MstDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Mid-table Status dropdown change handler
+  // INDEPENDENT HANDLER 1: Updates ONLY mid-table onboardingStatus
   const handleOnboardingStatusChange = (request, newStatus) => {
-    reviewAndAssignOrientation(
-      request.id, 
-      newStatus, 
-      request.assignedMstMembers || [currentUser.id], 
-      `Status updated to ${newStatus}`, 
-      currentUser
-    );
+    updateOnboardingStatus(request.id, newStatus, currentUser);
   };
 
-  // Final Actions dropdown change handler
+  // INDEPENDENT HANDLER 2: Updates ONLY end-table orientationStatus
   const handleOrientationActionChange = (request, actionChoice) => {
     if (actionChoice === 'Orientation Switch') {
       setAssigningRequest(request);
     } else {
-      reviewAndAssignOrientation(
-        request.id,
-        actionChoice,
-        request.assignedMstMembers || [currentUser.id],
-        null,
-        currentUser
-      );
+      updateOrientationStatus(request.id, actionChoice, currentUser);
     }
   };
 
@@ -222,7 +211,7 @@ export default function MstDashboard() {
           </div>
         </div>
 
-        {/* Responsive Table with Centered Column Headers */}
+        {/* Table with Decoupled Independent Status & Actions Columns */}
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead className="bg-slate-900/90 text-slate-300 font-bold border-b border-slate-700/60">
@@ -247,14 +236,14 @@ export default function MstDashboard() {
                 </tr>
               ) : (
                 filteredRequests.map(r => {
-                  const currentStatus = r.status === 'Done' ? 'Completed' : (r.status || 'Ongoing');
+                  // Independent Field 1: Onboarding Status (Default: Ongoing)
+                  const currentOnboardingStatus = r.onboardingStatus || 'Ongoing';
                   
-                  const currentAction = (r.status === 'Orientation Completed' || r.status === 'Orientation Scheduled' || r.status === 'Orientation Switch' || r.status === 'Timing Switch' || r.status === 'Orientation Pending')
-                    ? (r.status === 'Timing Switch' ? 'Orientation Switch' : r.status)
-                    : 'Orientation Pending';
+                  // Independent Field 2: Orientation Status (Default: Orientation Pending)
+                  const currentOrientationStatus = r.orientationStatus || 'Orientation Pending';
 
-                  const isStatusCompleted = currentStatus === 'Completed' || currentStatus === 'Onboarding Completed';
-                  const isActionCompleted = currentAction === 'Orientation Completed';
+                  const isStatusCompleted = currentOnboardingStatus === 'Completed';
+                  const isActionCompleted = currentOrientationStatus === 'Orientation Completed';
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
@@ -323,18 +312,18 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* MID-TABLE STATUS DROPDOWN: Clean naming (Default and Done tags removed) */}
+                      {/* INDEPENDENT COLUMN 1: MID-TABLE STATUS DROPDOWN */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex justify-center">
                           <select
-                            value={currentStatus}
+                            value={currentOnboardingStatus}
                             onChange={(e) => handleOnboardingStatusChange(r, e.target.value)}
                             className={`px-3 py-1.5 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
                               isStatusCompleted
                                 ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 font-extrabold shadow-emerald-600/20'
-                                : currentStatus === 'Ongoing'
+                                : currentOnboardingStatus === 'Ongoing'
                                 ? 'bg-cyan-950/80 border-cyan-500/50 text-cyan-200'
-                                : currentStatus === 'On Hold'
+                                : currentOnboardingStatus === 'On Hold'
                                 ? 'bg-rose-950/80 border-rose-500/50 text-rose-200'
                                 : 'bg-amber-950/80 border-amber-500/50 text-amber-200'
                             }`}
@@ -381,18 +370,18 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* FINAL ACTIONS DROPDOWN: Clean naming (Default tag removed) */}
+                      {/* INDEPENDENT COLUMN 2: FINAL ACTIONS DROPDOWN */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex items-center justify-center gap-1.5">
                           <select
-                            value={currentAction}
+                            value={currentOrientationStatus}
                             onChange={(e) => handleOrientationActionChange(r, e.target.value)}
                             className={`px-3 py-1.5 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
                               isActionCompleted
                                 ? 'bg-green-600/30 border-green-500 text-green-200 font-extrabold shadow-green-600/20'
-                                : currentAction === 'Orientation Scheduled'
+                                : currentOrientationStatus === 'Orientation Scheduled'
                                 ? 'bg-violet-950/80 border-violet-500/50 text-violet-200'
-                                : currentAction === 'Orientation Switch'
+                                : currentOrientationStatus === 'Orientation Switch'
                                 ? 'bg-orange-950/80 border-orange-500/50 text-orange-200'
                                 : 'bg-slate-900 border-slate-700 text-slate-300'
                             }`}

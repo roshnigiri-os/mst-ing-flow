@@ -6,7 +6,20 @@ const AppContext = createContext();
 export function AppProvider({ children }) {
   const [requests, setRequests] = useState(() => {
     const saved = localStorage.getItem('mst_ing_requests');
-    return saved ? JSON.parse(saved) : INITIAL_REQUESTS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Ensure onboardingStatus and orientationStatus fields exist on all loaded requests
+        return parsed.map(r => ({
+          ...r,
+          onboardingStatus: r.onboardingStatus || (r.status === 'Completed' || r.status === 'Done' ? 'Completed' : (r.status === 'On Hold' ? 'On Hold' : (r.status === 'Issue' ? 'Issue' : 'Ongoing'))),
+          orientationStatus: r.orientationStatus || (r.status === 'Orientation Completed' ? 'Orientation Completed' : (r.status === 'Orientation Scheduled' || r.status === 'Approved' ? 'Orientation Scheduled' : (r.status === 'Orientation Switch' || r.status === 'Timing Switch' ? 'Orientation Switch' : 'Orientation Pending')))
+        }));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return INITIAL_REQUESTS;
   });
 
   const [notifications, setNotifications] = useState(() => {
@@ -23,7 +36,6 @@ export function AppProvider({ children }) {
     return localStorage.getItem('mst_ing_theme') || 'dark';
   });
 
-  // Global modal state triggered by notifications or table actions
   const [activeNotificationRequest, setActiveNotificationRequest] = useState(null);
 
   useEffect(() => {
@@ -89,7 +101,6 @@ export function AppProvider({ children }) {
     setNotifications([]);
   };
 
-  // STEP 1: ING Uploads sheet or cloud link (Dual Submission Options)
   const createOnboardingRequest = (requestData, currentUser) => {
     const newReqId = `REQ-2026-${String(requests.length + 1).padStart(3, '0')}`;
     const newRequest = {
@@ -105,7 +116,9 @@ export function AppProvider({ children }) {
       sheetLink: requestData.sheetLink || null,
       submissionType: requestData.sheetLink ? 'link' : 'file',
       createdAt: new Date().toISOString(),
-      status: 'Pending',
+      status: 'Ongoing',
+      onboardingStatus: 'Ongoing', // Independent Default
+      orientationStatus: 'Orientation Pending', // Independent Default
       preferredDate: null,
       preferredTime: null,
       assignedMstMembers: [],
@@ -117,12 +130,11 @@ export function AppProvider({ children }) {
 
     setRequests(prev => [newRequest, ...prev]);
 
-    // Audit & Notification to MST
     addAuditLog('SHEET_UPLOAD', currentUser.name, currentUser.role, `Uploaded new roster ${newReqId} for ${newRequest.collegeName}`);
     addNotification({
       targetRole: 'MST Member',
       title: 'New Onboarding Sheet Submitted',
-      message: `${currentUser.name} (${newRequest.collegeName}) submitted request ${newReqId} (${requestData.sheetLink ? 'Cloud Sheet Link' : 'Uploaded File'}).`,
+      message: `${currentUser.name} (${newRequest.collegeName}) submitted request ${newReqId}.`,
       type: 'info',
       requestId: newReqId
     });
@@ -130,7 +142,6 @@ export function AppProvider({ children }) {
     return newRequest;
   };
 
-  // Update existing onboarding request (Editable Pipeline)
   const updateOnboardingRequest = (requestId, updatedFields, user) => {
     let updatedReq = null;
 
@@ -147,31 +158,66 @@ export function AppProvider({ children }) {
     }
   };
 
-  // STEP 3: MST Actions onboarding
-  const completeOnboardingTask = (requestId, mstUser) => {
+  // INDEPENDENT UPDATE FUNCTION 1: Update Onboarding Status solely (mid-table)
+  const updateOnboardingStatus = (requestId, newStatus, user) => {
     let targetReq = null;
 
     setRequests(prev => prev.map(req => {
       if (req.id === requestId) {
-        targetReq = { ...req, status: 'Onboarding Completed' };
+        targetReq = {
+          ...req,
+          onboardingStatus: newStatus,
+          status: newStatus // Sync root status for fallback
+        };
         return targetReq;
       }
       return req;
     }));
 
     if (targetReq) {
-      addAuditLog('ONBOARDING_COMPLETED', mstUser.name, mstUser.role, `Completed onboarding process for ${requestId} (${targetReq.collegeName})`);
+      addAuditLog('ONBOARDING_STATUS_UPDATE', user.name, user.role, `Updated onboarding status for ${requestId} to ${newStatus}`);
       addNotification({
         targetUserId: targetReq.submittedBy,
-        title: 'Onboarding Marked Completed!',
-        message: `MST Team member ${mstUser.name} processed onboarding for ${requestId}. Please schedule your orientation slot.`,
-        type: 'success',
+        title: `Onboarding Status Updated: ${newStatus}`,
+        message: `MST Team updated onboarding status for ${requestId} to ${newStatus}.`,
+        type: newStatus === 'Completed' ? 'success' : (newStatus === 'On Hold' ? 'warning' : 'info'),
         requestId: requestId
       });
     }
   };
 
-  // Attach Account Details Sheet to Request
+  // INDEPENDENT UPDATE FUNCTION 2: Update Orientation Status solely (end-table)
+  const updateOrientationStatus = (requestId, newAction, user, comment = null) => {
+    let targetReq = null;
+
+    setRequests(prev => prev.map(req => {
+      if (req.id === requestId) {
+        targetReq = {
+          ...req,
+          orientationStatus: newAction,
+          rescheduleComment: comment || req.rescheduleComment
+        };
+        return targetReq;
+      }
+      return req;
+    }));
+
+    if (targetReq) {
+      addAuditLog('ORIENTATION_STATUS_UPDATE', user.name, user.role, `Updated orientation status for ${requestId} to ${newAction}`);
+      addNotification({
+        targetUserId: targetReq.submittedBy,
+        title: `Orientation Status: ${newAction}`,
+        message: `Orientation action for ${requestId} set to ${newAction} by ${user.name}.`,
+        type: newAction === 'Orientation Completed' ? 'success' : 'info',
+        requestId: requestId
+      });
+    }
+  };
+
+  const completeOnboardingTask = (requestId, mstUser) => {
+    updateOnboardingStatus(requestId, 'Completed', mstUser);
+  };
+
   const attachAccountSheet = (requestId, fileData, mstUser) => {
     let targetReq = null;
 
@@ -204,7 +250,6 @@ export function AppProvider({ children }) {
     }
   };
 
-  // STEP 4: ING Selects & Submits Orientation Date & Time
   const submitOrientationDate = (requestId, date, time, notes, ingUser) => {
     let targetReq = null;
 
@@ -212,7 +257,7 @@ export function AppProvider({ children }) {
       if (req.id === requestId) {
         targetReq = {
           ...req,
-          status: 'Orientation Scheduled',
+          orientationStatus: 'Orientation Scheduled',
           preferredDate: date,
           preferredTime: time,
           notes: notes ? `${req.notes}\n[Date Note]: ${notes}` : req.notes
@@ -234,17 +279,16 @@ export function AppProvider({ children }) {
     }
   };
 
-  // STEP 5: MST Reviews & Approves/Updates Status & Assigns Team Members
-  const reviewAndAssignOrientation = (requestId, newStatus, assignedMstIds, comment, mstUser) => {
+  const reviewAndAssignOrientation = (requestId, actionChoice, assignedMstIds, comment, mstUser) => {
     let targetReq = null;
 
     setRequests(prev => prev.map(req => {
       if (req.id === requestId) {
         targetReq = {
           ...req,
-          status: newStatus,
+          orientationStatus: actionChoice,
           assignedMstMembers: assignedMstIds || req.assignedMstMembers,
-          rescheduleComment: (newStatus === 'Orientation Switch' || newStatus === 'Timing Switch' || newStatus === 'Issue' || newStatus === 'On Hold') ? comment : null
+          rescheduleComment: (actionChoice === 'Orientation Switch' || actionChoice === 'Issue' || actionChoice === 'On Hold') ? comment : req.rescheduleComment
         };
         return targetReq;
       }
@@ -252,19 +296,18 @@ export function AppProvider({ children }) {
     }));
 
     if (targetReq) {
-      addAuditLog('ORIENTATION_REVIEWED', mstUser.name, mstUser.role, `Updated ${requestId} status to ${newStatus}. Assigned MST IDs: ${assignedMstIds.join(', ')}`);
+      addAuditLog('ORIENTATION_REVIEWED', mstUser.name, mstUser.role, `Updated ${requestId} orientation action to ${actionChoice}. Assigned MST IDs: ${(assignedMstIds || []).join(', ')}`);
       
       let notifType = 'info';
-      if (newStatus === 'Orientation Scheduled' || newStatus === 'Approved') notifType = 'success';
-      if (newStatus === 'On Hold') notifType = 'warning';
-      if (newStatus === 'Orientation Switch' || newStatus === 'Issue') notifType = 'error';
+      if (actionChoice === 'Orientation Scheduled' || actionChoice === 'Orientation Completed') notifType = 'success';
+      if (actionChoice === 'Orientation Switch') notifType = 'error';
 
       addNotification({
         targetUserId: targetReq.submittedBy,
-        title: `Orientation Request Status: ${newStatus}`,
-        message: (newStatus === 'Orientation Switch' || newStatus === 'Issue')
+        title: `Orientation Action: ${actionChoice}`,
+        message: actionChoice === 'Orientation Switch'
           ? `MST Team requested a timing switch for ${requestId}. Comment: "${comment}"` 
-          : `Orientation status for ${requestId} has been updated to ${newStatus} by ${mstUser.name}.`,
+          : `Orientation action for ${requestId} updated to ${actionChoice} by ${mstUser.name}.`,
         type: notifType,
         requestId: requestId
       });
@@ -287,6 +330,8 @@ export function AppProvider({ children }) {
       toggleTheme,
       createOnboardingRequest,
       updateOnboardingRequest,
+      updateOnboardingStatus,
+      updateOrientationStatus,
       completeOnboardingTask,
       attachAccountSheet,
       submitOrientationDate,

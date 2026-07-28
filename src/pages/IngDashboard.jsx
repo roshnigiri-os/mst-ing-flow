@@ -32,7 +32,7 @@ export default function IngDashboard() {
   useEffect(() => {
     if (activeNotificationRequest) {
       const found = (requests || []).find(r => r.id === activeNotificationRequest);
-      if (found && (found.status === 'Done' || found.status === 'Onboarding Completed' || found.status === 'Issue' || found.status === 'Timing Switch')) {
+      if (found && (found.onboardingStatus === 'Completed' || found.orientationStatus === 'Orientation Completed' || found.orientationStatus === 'Orientation Switch')) {
         setSchedulingRequest(found);
       }
       setActiveNotificationRequest(null);
@@ -51,9 +51,9 @@ export default function IngDashboard() {
   });
 
   const totalUploaded = myRequests.length;
-  const onboardingCompletedCount = myRequests.filter(r => r.status === 'Done' || r.status === 'Onboarding Completed' || r.status === 'Completed').length;
+  const onboardingCompletedCount = myRequests.filter(r => r.onboardingStatus === 'Completed' || r.orientationStatus === 'Orientation Completed').length;
   const scheduledCount = myRequests.filter(r => r.preferredDate ? true : false).length;
-  const actionRequiredCount = myRequests.filter(r => r.status === 'Issue' || r.status === 'On Hold').length;
+  const actionRequiredCount = myRequests.filter(r => r.onboardingStatus === 'Issue' || r.onboardingStatus === 'On Hold' || r.orientationStatus === 'Orientation Switch').length;
 
   const handleDownloadSheet = (accountSheet, reqId) => {
     if (!accountSheet) return;
@@ -128,7 +128,7 @@ export default function IngDashboard() {
         />
       </div>
 
-      {/* Onboarding Request Pipeline Table (Centered Column Headers & Best-Fit Layout) */}
+      {/* Onboarding Request Pipeline Table */}
       <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4 overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
           <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function IngDashboard() {
                     <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-indigo-300 whitespace-nowrap">{r.id}</td>
                     <td className="py-3 px-3.5 text-center align-middle font-medium text-slate-200">{r.program}</td>
                     <td className="py-3 px-3.5 text-center align-middle">
-                      <StatusBadge status={r.status || 'Ongoing'} />
+                      <StatusBadge status={r.onboardingStatus || r.status || 'Ongoing'} />
                     </td>
 
                     {/* Uploaded Sheet / Link rendering */}
