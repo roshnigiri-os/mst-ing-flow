@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, UserPlus, Shield, School, Users, CheckCircle2, Eye, EyeOff, Lock } from 'lucide-react';
+import { X, UserPlus, Shield, School, Users, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 export default function UserManagementModal({ userToEdit, onClose }) {
-  const { addUser, updateUser } = useAuth();
+  const { addUser, updateUser, currentUser } = useAuth();
 
   const [name, setName] = useState(userToEdit ? userToEdit.name : '');
   const [email, setEmail] = useState(userToEdit ? userToEdit.email : '');
@@ -13,6 +13,11 @@ export default function UserManagementModal({ userToEdit, onClose }) {
   const [mstRole, setMstRole] = useState(userToEdit ? userToEdit.mstRole || 'MST Specialist' : 'MST Specialist');
   const [collegeName, setCollegeName] = useState(userToEdit ? userToEdit.collegeName || '' : '');
   const [department, setDepartment] = useState(userToEdit ? userToEdit.department || 'Operations' : 'Operations');
+
+  // Verify that active user is System Administrator
+  if (!currentUser || currentUser.role !== 'Admin') {
+    return null;
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -47,9 +52,12 @@ export default function UserManagementModal({ userToEdit, onClose }) {
         <div className="flex items-center justify-between pb-4 border-b border-slate-700/60">
           <div className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-lg font-bold text-slate-100">
-              {userToEdit ? 'Edit System User Account' : 'Create New Account'}
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-slate-100">
+                {userToEdit ? 'Edit System Account' : 'Provision New System Account'}
+              </h2>
+              <p className="text-xs text-slate-400">Admin Account Management & Role Assignment</p>
+            </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-slate-100">
             <X className="w-5 h-5" />
@@ -104,9 +112,9 @@ export default function UserManagementModal({ userToEdit, onClose }) {
             </div>
           </div>
 
-          {/* Role selector */}
+          {/* Role selector for System Administrator */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">Account Role</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-2">Assign Account Role</label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
@@ -198,7 +206,7 @@ export default function UserManagementModal({ userToEdit, onClose }) {
               type="submit"
               className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/30"
             >
-              <CheckCircle2 className="w-4 h-4" /> {userToEdit ? 'Save Changes' : 'Create Account'}
+              <CheckCircle2 className="w-4 h-4" /> {userToEdit ? 'Save Account Changes' : 'Provision Account'}
             </button>
           </div>
         </form>
