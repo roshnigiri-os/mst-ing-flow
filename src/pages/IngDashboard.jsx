@@ -17,8 +17,9 @@ import {
 } from 'lucide-react';
 
 export default function IngDashboard() {
-  const { currentUser } = useAuth();
-  const { requests, users, activeNotificationRequest, setActiveNotificationRequest } = useApp();
+  // FIX: Destructure users from useAuth(), NOT useApp()
+  const { currentUser, users = [] } = useAuth();
+  const { requests = [], activeNotificationRequest, setActiveNotificationRequest } = useApp();
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [schedulingRequest, setSchedulingRequest] = useState(null);
@@ -26,7 +27,7 @@ export default function IngDashboard() {
   // Handle notification redirection (Requirement #3)
   useEffect(() => {
     if (activeNotificationRequest) {
-      const found = requests.find(r => r.id === activeNotificationRequest);
+      const found = (requests || []).find(r => r.id === activeNotificationRequest);
       if (found && (found.status === 'Done' || found.status === 'Onboarding Completed' || found.status === 'Issue' || found.status === 'Timing Switch')) {
         setSchedulingRequest(found);
       }
@@ -35,18 +36,21 @@ export default function IngDashboard() {
   }, [activeNotificationRequest, requests, setActiveNotificationRequest]);
 
   // Filter requests belonging to this ING College or user
-  const myRequests = requests.filter(r => 
+  const myRequests = (requests || []).filter(r => 
+    !currentUser ||
     r.submittedBy === currentUser.id || 
-    r.collegeName === currentUser.collegeName
+    r.collegeName === currentUser.collegeName ||
+    currentUser.role === 'ING Member'
   );
 
   const totalUploaded = myRequests.length;
-  const onboardingCompletedCount = myRequests.filter(r => r.status === 'Done' || r.status === 'Onboarding Completed').length;
-  const scheduledCount = myRequests.filter(r => r.preferredDate !== null).length;
+  const onboardingCompletedCount = myRequests.filter(r => r.status === 'Done' || r.status === 'Onboarding Completed' || r.status === 'Completed').length;
+  const scheduledCount = myRequests.filter(r => r.preferredDate ? true : false).length;
   const actionRequiredCount = myRequests.filter(r => r.status === 'Issue' || r.status === 'On Hold').length;
 
   const handleDownloadSheet = (accountSheet, reqId) => {
-    const content = `ACCOUNT DETAILS SHEET FOR ${reqId}\nFilename: ${accountSheet.fileName}\nUploaded By: ${accountSheet.uploadedBy}\nDate: ${accountSheet.uploadedAt}\nStatus: Verified`;
+    if (!accountSheet) return;
+    const content = `ACCOUNT DETAILS SHEET FOR ${reqId}\nFilename: ${accountSheet.fileName}\nUploaded By: ${accountSheet.uploadedBy || 'MST'}\nDate: ${accountSheet.uploadedAt || new Date().toISOString()}\nStatus: Verified`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -113,7 +117,7 @@ export default function IngDashboard() {
         />
       </div>
 
-      {/* REQUIREMENT 4: Onboarding Request Pipeline Table (Roster Size & Actions columns removed) */}
+      {/* Onboarding Request Pipeline Table */}
       <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
           <div className="flex items-center gap-2">
@@ -185,13 +189,13 @@ export default function IngDashboard() {
                       {r.assignedMstMembers && r.assignedMstMembers.length > 0 ? (
                         <div className="flex items-center gap-1">
                           {r.assignedMstMembers.map(mId => {
-                            const found = users.find(u => u.id === mId);
+                            const found = (users || []).find(u => u.id === mId);
                             return (
                               <img
                                 key={mId}
                                 src={found ? found.avatar : 'https://api.dicebear.com/7.x/avataaars/svg?seed=MST'}
                                 alt={found ? found.name : 'MST'}
-                                title={found ? `${found.name} (${found.mstRole})` : 'MST Handler'}
+                                title={found ? `${found.name} (${found.mstRole || 'MST'})` : 'MST Handler'}
                                 className="w-6 h-6 rounded-full object-cover border border-indigo-500/50"
                               />
                             );
