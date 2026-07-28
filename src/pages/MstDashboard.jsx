@@ -48,7 +48,7 @@ export default function MstDashboard() {
 
   // Metrics
   const totalRequests = requests.length;
-  const pendingOnboardingCount = requests.filter(r => r.status === 'Pending').length;
+  const pendingOnboardingCount = requests.filter(r => r.status === 'Pending' || r.status === 'Ongoing').length;
   const dateSubmittedCount = requests.filter(r => r.preferredDate !== null && r.status !== 'Orientation Completed').length;
   const completedCount = requests.filter(r => r.status === 'Orientation Completed' || r.status === 'Completed').length;
 
@@ -60,7 +60,7 @@ export default function MstDashboard() {
 
     if (!matchesSearch) return false;
 
-    if (activeTab === 'pending') return r.status === 'Pending';
+    if (activeTab === 'pending') return r.status === 'Pending' || r.status === 'Ongoing';
     if (activeTab === 'date-approval') return r.preferredDate !== null && r.status !== 'Orientation Completed';
     if (activeTab === 'completed') return r.status === 'Orientation Completed' || r.status === 'Completed';
 
@@ -83,7 +83,7 @@ export default function MstDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Mid-table Status dropdown change handler (Options: Completed, Ongoing, On Hold, Issue)
+  // Mid-table Status dropdown change handler (Default: Ongoing)
   const handleOnboardingStatusChange = (request, newStatus) => {
     reviewAndAssignOrientation(
       request.id, 
@@ -94,7 +94,7 @@ export default function MstDashboard() {
     );
   };
 
-  // Final Actions dropdown change handler (Options: Orientation Scheduled, Orientation Completed, Orientation Switch, Orientation Pending)
+  // Final Actions dropdown change handler (Default: Orientation Pending)
   const handleOrientationActionChange = (request, actionChoice) => {
     if (actionChoice === 'Orientation Switch') {
       setAssigningRequest(request);
@@ -137,11 +137,11 @@ export default function MstDashboard() {
           subtext="Total partner requests"
         />
         <StatCard
-          title="Pending Verification"
+          title="Ongoing / Pending"
           value={pendingOnboardingCount}
           icon={Clock}
           color="amber"
-          subtext="Sheets awaiting verification"
+          subtext="Sheets in active processing"
         />
         <StatCard
           title="Date Reviews Required"
@@ -159,8 +159,8 @@ export default function MstDashboard() {
         />
       </div>
 
-      {/* Requests Queue Table */}
-      <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4">
+      {/* Requests Queue Table (Responsive best-fit layout with centered headers) */}
+      <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4 overflow-hidden">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
           {/* Workflow Stage Tabs */}
           <div className="flex flex-wrap items-center gap-2">
@@ -183,7 +183,7 @@ export default function MstDashboard() {
                   : 'bg-slate-900/60 text-slate-400 hover:text-slate-200'
               }`}
             >
-              Pending ({pendingOnboardingCount})
+              Ongoing / Pending ({pendingOnboardingCount})
             </button>
 
             <button
@@ -222,115 +222,134 @@ export default function MstDashboard() {
           </div>
         </div>
 
-        {/* Requests Table */}
+        {/* Responsive Table with Centered Column Headers */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-700/60">
+          <table className="w-full text-xs border-collapse">
+            <thead className="bg-slate-900/90 text-slate-300 font-bold border-b border-slate-700/60">
               <tr>
-                <th className="py-3 px-4">Request ID</th>
-                <th className="py-3 px-4">College Name</th>
-                <th className="py-3 px-4">Program</th>
-                <th className="py-3 px-4">Onboarding Sheet (ING)</th>
-                <th className="py-3 px-4">Account Details Sheet</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Requested Orientation Date</th>
-                <th className="py-3 px-4">Assigned Handlers</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Request ID</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">College Name</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Program</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Onboarding Sheet (ING)</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Account Details Sheet</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Status</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Requested Orientation Date</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Assigned Handlers</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="text-center py-8 text-slate-400">
+                  <td colSpan="9" className="text-center py-8 text-slate-400 align-middle">
                     No requests match the selected tab filter.
                   </td>
                 </tr>
               ) : (
                 filteredRequests.map(r => {
-                  const currentStatus = r.status === 'Done' ? 'Completed' : r.status;
+                  // Default mid-table Status: 'Ongoing'
+                  const currentStatus = r.status === 'Done' ? 'Completed' : (r.status || 'Ongoing');
+                  
+                  // Default final Action: 'Orientation Pending'
+                  const currentAction = (r.status === 'Orientation Completed' || r.status === 'Orientation Scheduled' || r.status === 'Orientation Switch' || r.status === 'Timing Switch' || r.status === 'Orientation Pending')
+                    ? (r.status === 'Timing Switch' ? 'Orientation Switch' : r.status)
+                    : 'Orientation Pending';
+
+                  const isStatusCompleted = currentStatus === 'Completed' || currentStatus === 'Onboarding Completed';
+                  const isActionCompleted = currentAction === 'Orientation Completed';
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-indigo-300">{r.id}</td>
-                      <td className="py-3 px-4 font-semibold text-slate-200">{r.collegeName}</td>
-                      <td className="py-3 px-4 text-slate-200 font-medium">{r.program}</td>
+                      <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-indigo-300 whitespace-nowrap">{r.id}</td>
+                      <td className="py-3 px-3.5 text-center align-middle font-semibold text-slate-200">{r.collegeName}</td>
+                      <td className="py-3 px-3.5 text-center align-middle text-slate-200 font-medium">{r.program}</td>
 
                       {/* Onboarding Sheet (ING) File or Cloud Link */}
-                      <td className="py-3 px-4">
-                        {r.sheetLink ? (
-                          <a
-                            href={r.sheetLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[150px]"
-                            title={`Open Cloud Sheet: ${r.sheetLink}`}
-                          >
-                            <ExternalLink className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                            <span className="truncate">Open Cloud Sheet</span>
-                          </a>
-                        ) : (
-                          <button
-                            onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false, null)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
-                            title={`Download ${r.fileName || 'roster_sheet.csv'}`}
-                          >
-                            <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                            <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
-                            <Download className="w-3 h-3 shrink-0 ml-0.5" />
-                          </button>
-                        )}
+                      <td className="py-3 px-3.5 text-center align-middle">
+                        <div className="flex justify-center">
+                          {r.sheetLink ? (
+                            <a
+                              href={r.sheetLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[150px]"
+                              title={`Open Cloud Sheet: ${r.sheetLink}`}
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                              <span className="truncate">Open Cloud Sheet</span>
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false, null)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
+                              title={`Download ${r.fileName || 'roster_sheet.csv'}`}
+                            >
+                              <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                              <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
+                              <Download className="w-3 h-3 shrink-0 ml-0.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       {/* Account Details Sheet Column */}
-                      <td className="py-3 px-4">
-                        {r.accountSheet ? (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink)}
-                              className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
-                              title={`Download ${r.accountSheet.fileName}`}
-                            >
-                              <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
-                              <span className="truncate">{r.accountSheet.fileName}</span>
-                              <Download className="w-3 h-3 shrink-0 ml-0.5" />
-                            </button>
+                      <td className="py-3 px-3.5 text-center align-middle">
+                        <div className="flex justify-center">
+                          {r.accountSheet ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink)}
+                                className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
+                                title={`Download ${r.accountSheet.fileName}`}
+                              >
+                                <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
+                                <span className="truncate">{r.accountSheet.fileName}</span>
+                                <Download className="w-3 h-3 shrink-0 ml-0.5" />
+                              </button>
+                              <button
+                                onClick={() => setAttachingRequest(r)}
+                                className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+                                title="Re-attach document"
+                              >
+                                <Paperclip className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
                             <button
                               onClick={() => setAttachingRequest(r)}
-                              className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200"
-                              title="Re-attach document"
+                              className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-all"
                             >
-                              <Paperclip className="w-3 h-3" />
+                              <Plus className="w-3.5 h-3.5 text-indigo-400" /> Attach Sheet
                             </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setAttachingRequest(r)}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-all"
+                          )}
+                        </div>
+                      </td>
+
+                      {/* MID-TABLE STATUS DROPDOWN: Default = Ongoing. Green Highlight when Completed */}
+                      <td className="py-3 px-3.5 text-center align-middle">
+                        <div className="flex justify-center">
+                          <select
+                            value={currentStatus}
+                            onChange={(e) => handleOnboardingStatusChange(r, e.target.value)}
+                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
+                              isStatusCompleted
+                                ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 font-extrabold shadow-emerald-600/20'
+                                : currentStatus === 'Ongoing'
+                                ? 'bg-cyan-950/80 border-cyan-500/50 text-cyan-200'
+                                : currentStatus === 'On Hold'
+                                ? 'bg-rose-950/80 border-rose-500/50 text-rose-200'
+                                : 'bg-amber-950/80 border-amber-500/50 text-amber-200'
+                            }`}
                           >
-                            <Plus className="w-3.5 h-3.5 text-indigo-400" /> Attach Sheet
-                          </button>
-                        )}
+                            <option value="Ongoing" className="bg-slate-900 text-slate-200">Ongoing (Default)</option>
+                            <option value="Completed" className="bg-slate-900 text-emerald-300 font-bold">Completed (Done)</option>
+                            <option value="On Hold" className="bg-slate-900 text-rose-300">On Hold</option>
+                            <option value="Issue" className="bg-slate-900 text-amber-300">Issue</option>
+                          </select>
+                        </div>
                       </td>
 
-                      {/* MID-TABLE STATUS DROPDOWN: Options - Completed, Ongoing, On Hold, Issue */}
-                      <td className="py-3 px-4">
-                        <select
-                          value={
-                            currentStatus === 'Completed' || currentStatus === 'Ongoing' || currentStatus === 'On Hold' || currentStatus === 'Issue' 
-                              ? currentStatus 
-                              : 'Completed'
-                          }
-                          onChange={(e) => handleOnboardingStatusChange(r, e.target.value)}
-                          className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer"
-                        >
-                          <option value="Completed">Completed</option>
-                          <option value="Ongoing">Ongoing</option>
-                          <option value="On Hold">On Hold</option>
-                          <option value="Issue">Issue</option>
-                        </select>
-                      </td>
-
-                      <td className="py-3 px-4 text-slate-300">
+                      <td className="py-3 px-3.5 text-center align-middle text-slate-300">
                         {r.preferredDate ? (
                           <div>
                             <span className="font-semibold text-indigo-300">{r.preferredDate}</span>
@@ -341,44 +360,49 @@ export default function MstDashboard() {
                         )}
                       </td>
 
-                      <td className="py-3 px-4">
-                        {r.assignedMstMembers && r.assignedMstMembers.length > 0 ? (
-                          <div className="flex items-center gap-1">
-                            {r.assignedMstMembers.map(mId => {
-                              const found = users.find(u => u.id === mId);
-                              return (
-                                <img
-                                  key={mId}
-                                  src={found ? found.avatar : 'https://api.dicebear.com/7.x/avataaars/svg?seed=MST'}
-                                  alt={found ? found.name : 'MST'}
-                                  title={found ? `${found.name} (${found.mstRole})` : 'MST Handler'}
-                                  className="w-6 h-6 rounded-full object-cover border border-indigo-500/50"
-                                />
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-slate-500">Unassigned</span>
-                        )}
+                      <td className="py-3 px-3.5 text-center align-middle">
+                        <div className="flex justify-center">
+                          {r.assignedMstMembers && r.assignedMstMembers.length > 0 ? (
+                            <div className="flex items-center gap-1">
+                              {r.assignedMstMembers.map(mId => {
+                                const found = users.find(u => u.id === mId);
+                                return (
+                                  <img
+                                    key={mId}
+                                    src={found ? found.avatar : 'https://api.dicebear.com/7.x/avataaars/svg?seed=MST'}
+                                    alt={found ? found.name : 'MST'}
+                                    title={found ? `${found.name} (${found.mstRole})` : 'MST Handler'}
+                                    className="w-6 h-6 rounded-full object-cover border border-indigo-500/50"
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-500">Unassigned</span>
+                          )}
+                        </div>
                       </td>
 
-                      {/* FINAL ACTIONS DROPDOWN: Options - Orientation Scheduled, Orientation Completed, Orientation Switch, Orientation Pending */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      {/* FINAL ACTIONS DROPDOWN: Default = Orientation Pending. Green Highlight when Orientation Completed */}
+                      <td className="py-3 px-3.5 text-center align-middle">
+                        <div className="flex items-center justify-center gap-1.5">
                           <select
-                            value={
-                              r.status === 'Orientation Completed' ? 'Orientation Completed' :
-                              r.status === 'Orientation Switch' || r.status === 'Timing Switch' ? 'Orientation Switch' :
-                              r.status === 'Orientation Pending' ? 'Orientation Pending' :
-                              'Orientation Scheduled'
-                            }
+                            value={currentAction}
                             onChange={(e) => handleOrientationActionChange(r, e.target.value)}
-                            className="px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-500/40 text-indigo-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md"
+                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
+                              isActionCompleted
+                                ? 'bg-green-600/30 border-green-500 text-green-200 font-extrabold shadow-green-600/20'
+                                : currentAction === 'Orientation Scheduled'
+                                ? 'bg-violet-950/80 border-violet-500/50 text-violet-200'
+                                : currentAction === 'Orientation Switch'
+                                ? 'bg-orange-950/80 border-orange-500/50 text-orange-200'
+                                : 'bg-slate-900 border-slate-700 text-slate-300'
+                            }`}
                           >
-                            <option value="Orientation Scheduled">Orientation Scheduled</option>
-                            <option value="Orientation Completed">Orientation Completed</option>
-                            <option value="Orientation Switch">Orientation Switch</option>
-                            <option value="Orientation Pending">Orientation Pending</option>
+                            <option value="Orientation Pending" className="bg-slate-900 text-slate-300">Orientation Pending (Default)</option>
+                            <option value="Orientation Completed" className="bg-slate-900 text-green-300 font-bold">Orientation Completed</option>
+                            <option value="Orientation Scheduled" className="bg-slate-900 text-violet-300">Orientation Scheduled</option>
+                            <option value="Orientation Switch" className="bg-slate-900 text-orange-300">Orientation Switch</option>
                           </select>
 
                           <button

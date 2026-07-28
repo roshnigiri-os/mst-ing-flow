@@ -39,11 +39,10 @@ export default function IngDashboard() {
     }
   }, [activeNotificationRequest, requests, setActiveNotificationRequest]);
 
-  // FEATURE 1: Strict School-Based Data Isolation for ING Members
+  // Strict School-Based Data Isolation for ING Members
   const myRequests = (requests || []).filter(r => {
     if (!currentUser) return false;
 
-    // Strict matching by user ID or exact college name
     const matchesUser = r.submittedBy === currentUser.id;
     const matchesCollege = currentUser.collegeName && r.collegeName && 
       r.collegeName.toLowerCase().trim() === currentUser.collegeName.toLowerCase().trim();
@@ -129,8 +128,8 @@ export default function IngDashboard() {
         />
       </div>
 
-      {/* Onboarding Request Pipeline Table */}
-      <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4">
+      {/* Onboarding Request Pipeline Table (Centered Column Headers & Best-Fit Layout) */}
+      <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4 overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -142,75 +141,79 @@ export default function IngDashboard() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-700/60">
+          <table className="w-full text-xs border-collapse">
+            <thead className="bg-slate-900/90 text-slate-300 font-bold border-b border-slate-700/60">
               <tr>
-                <th className="py-3 px-4">Request ID</th>
-                <th className="py-3 px-4">Program & Cohort</th>
-                <th className="py-3 px-4">Onboarding Status</th>
-                <th className="py-3 px-4">Uploaded Sheet / Link</th>
-                <th className="py-3 px-4">Account Details Sheet</th>
-                <th className="py-3 px-4">Orientation Date & Time</th>
-                <th className="py-3 px-4">Assigned MST Team</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Request ID</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Program & Cohort</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Onboarding Status</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Uploaded Sheet / Link</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Account Details Sheet</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Orientation Date & Time</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Assigned MST Team</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {myRequests.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-8 text-slate-400">
+                  <td colSpan="8" className="text-center py-8 text-slate-400 align-middle">
                     No onboarding sheets uploaded for {currentUser?.collegeName || 'this school'} yet. Click "Upload Onboarding Sheet" to get started.
                   </td>
                 </tr>
               ) : (
                 myRequests.map(r => (
                   <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-indigo-300">{r.id}</td>
-                    <td className="py-3 px-4 font-medium text-slate-200">{r.program}</td>
-                    <td className="py-3 px-4">
-                      <StatusBadge status={r.status} />
+                    <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-indigo-300 whitespace-nowrap">{r.id}</td>
+                    <td className="py-3 px-3.5 text-center align-middle font-medium text-slate-200">{r.program}</td>
+                    <td className="py-3 px-3.5 text-center align-middle">
+                      <StatusBadge status={r.status || 'Ongoing'} />
                     </td>
 
-                    {/* FEATURE 5: Uploaded Sheet / Link rendering */}
-                    <td className="py-3 px-4">
-                      {r.sheetLink ? (
-                        <a
-                          href={r.sheetLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[170px]"
-                          title={`Open Cloud Sheet: ${r.sheetLink}`}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                          <span className="truncate">Open Cloud Sheet</span>
-                        </a>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[170px]">
-                          <FileText className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
-                        </span>
-                      )}
+                    {/* Uploaded Sheet / Link rendering */}
+                    <td className="py-3 px-3.5 text-center align-middle">
+                      <div className="flex justify-center">
+                        {r.sheetLink ? (
+                          <a
+                            href={r.sheetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[170px]"
+                            title={`Open Cloud Sheet: ${r.sheetLink}`}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                            <span className="truncate">Open Cloud Sheet</span>
+                          </a>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[170px]">
+                            <FileText className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
+                          </span>
+                        )}
+                      </div>
                     </td>
 
-                    <td className="py-3 px-4">
-                      {r.accountSheet ? (
-                        <button
-                          onClick={() => handleDownloadSheet(r.accountSheet, r.id)}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[170px]"
-                          title={`Download ${r.accountSheet.fileName}`}
-                        >
-                          <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
-                          <span className="truncate">{r.accountSheet.fileName}</span>
-                          <Download className="w-3 h-3 shrink-0 ml-0.5" />
-                        </button>
-                      ) : (
-                        <span className="text-slate-500 italic text-[11px]">Pending MST</span>
-                      )}
+                    <td className="py-3 px-3.5 text-center align-middle">
+                      <div className="flex justify-center">
+                        {r.accountSheet ? (
+                          <button
+                            onClick={() => handleDownloadSheet(r.accountSheet, r.id)}
+                            className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[170px]"
+                            title={`Download ${r.accountSheet.fileName}`}
+                          >
+                            <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
+                            <span className="truncate">{r.accountSheet.fileName}</span>
+                            <Download className="w-3 h-3 shrink-0 ml-0.5" />
+                          </button>
+                        ) : (
+                          <span className="text-slate-500 italic text-[11px]">Pending MST</span>
+                        )}
+                      </div>
                     </td>
 
                     <td 
                       onClick={() => setSchedulingRequest(r)}
-                      className="py-3 px-4 text-slate-300 cursor-pointer hover:bg-indigo-950/30 transition-colors rounded-lg"
+                      className="py-3 px-3.5 text-center align-middle text-slate-300 cursor-pointer hover:bg-indigo-950/30 transition-colors rounded-lg"
                       title="Click to schedule or update orientation date & time"
                     >
                       {r.preferredDate ? (
@@ -219,36 +222,38 @@ export default function IngDashboard() {
                           <div className="text-[10px] text-slate-400 font-mono">{r.preferredTime}</div>
                         </div>
                       ) : (
-                        <span className="text-indigo-400 underline font-semibold text-[11px] flex items-center gap-1">
+                        <span className="text-indigo-400 underline font-semibold text-[11px] flex items-center justify-center gap-1">
                           <Calendar className="w-3.5 h-3.5" /> Click to Schedule Date
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3 px-4">
-                      {r.assignedMstMembers && r.assignedMstMembers.length > 0 ? (
-                        <div className="flex items-center gap-1">
-                          {r.assignedMstMembers.map(mId => {
-                            const found = (users || []).find(u => u.id === mId);
-                            return (
-                              <img
-                                key={mId}
-                                src={found ? found.avatar : 'https://api.dicebear.com/7.x/avataaars/svg?seed=MST'}
-                                alt={found ? found.name : 'MST'}
-                                title={found ? `${found.name} (${found.mstRole || 'MST'})` : 'MST Handler'}
-                                className="w-6 h-6 rounded-full object-cover border border-indigo-500/50"
-                              />
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <span className="text-[11px] text-slate-500">Unassigned</span>
-                      )}
+                    <td className="py-3 px-3.5 text-center align-middle">
+                      <div className="flex justify-center">
+                        {r.assignedMstMembers && r.assignedMstMembers.length > 0 ? (
+                          <div className="flex items-center gap-1">
+                            {r.assignedMstMembers.map(mId => {
+                              const found = (users || []).find(u => u.id === mId);
+                              return (
+                                <img
+                                  key={mId}
+                                  src={found ? found.avatar : 'https://api.dicebear.com/7.x/avataaars/svg?seed=MST'}
+                                  alt={found ? found.name : 'MST'}
+                                  title={found ? `${found.name} (${found.mstRole || 'MST'})` : 'MST Handler'}
+                                  className="w-6 h-6 rounded-full object-cover border border-indigo-500/50"
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-500">Unassigned</span>
+                        )}
+                      </div>
                     </td>
 
-                    {/* FEATURE 3: Editable Request Pipeline Row Actions */}
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                    {/* Editable Request Pipeline Row Actions */}
+                    <td className="py-3 px-3.5 text-center align-middle">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => setEditingRequest(r)}
                           className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
