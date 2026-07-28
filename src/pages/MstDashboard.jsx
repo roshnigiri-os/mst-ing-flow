@@ -17,7 +17,8 @@ import {
   Paperclip,
   FileSpreadsheet,
   Download,
-  Plus
+  Plus,
+  FileText
 } from 'lucide-react';
 
 export default function MstDashboard() {
@@ -30,7 +31,7 @@ export default function MstDashboard() {
   const [attachingRequest, setAttachingRequest] = useState(null);
   const [actioningRequest, setActioningRequest] = useState(null);
 
-  // Handle notification redirection (Requirement #3)
+  // Handle notification redirection
   useEffect(() => {
     if (activeNotificationRequest) {
       const found = requests.find(r => r.id === activeNotificationRequest);
@@ -66,13 +67,14 @@ export default function MstDashboard() {
     return true;
   });
 
-  const handleDownloadSheet = (accountSheet, reqId) => {
-    const content = `ACCOUNT DETAILS SHEET FOR ${reqId}\nFilename: ${accountSheet.fileName}\nUploaded By: ${accountSheet.uploadedBy}\nDate: ${accountSheet.uploadedAt}\nStatus: System Access Verified & Granted`;
+  const handleDownloadSheet = (fileName, reqId, isAccountSheet = false) => {
+    const title = isAccountSheet ? `ACCOUNT DETAILS SHEET` : `STUDENT ROSTER SHEET`;
+    const content = `${title} FOR ${reqId}\nFilename: ${fileName}\nStatus: Verified\nDate: ${new Date().toISOString()}`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = accountSheet.fileName;
+    a.download = fileName;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -90,7 +92,7 @@ export default function MstDashboard() {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Review incoming college sheets, attach account details documents, mark onboarding completion, and schedule orientation sessions
+            Review incoming ING college sheets, attach account details documents, mark onboarding completion, and schedule orientation sessions
           </p>
         </div>
       </div>
@@ -197,8 +199,10 @@ export default function MstDashboard() {
               <tr>
                 <th className="py-3 px-4">Request ID</th>
                 <th className="py-3 px-4">College Name</th>
-                <th className="py-3 px-4">Program & Size</th>
+                <th className="py-3 px-4">Program</th>
                 <th className="py-3 px-4">Onboarding Status</th>
+                {/* REQUIREMENT 2: Column to show Onboarding sheet added by ING member */}
+                <th className="py-3 px-4">Onboarding Sheet (ING)</th>
                 <th className="py-3 px-4">Account Details Sheet</th>
                 <th className="py-3 px-4">Requested Orientation Date</th>
                 <th className="py-3 px-4">Assigned Handlers</th>
@@ -208,7 +212,7 @@ export default function MstDashboard() {
             <tbody className="divide-y divide-slate-800/60">
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-8 text-slate-400">
+                  <td colSpan="9" className="text-center py-8 text-slate-400">
                     No requests match the selected tab filter.
                   </td>
                 </tr>
@@ -220,12 +224,22 @@ export default function MstDashboard() {
                     <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3 px-4 font-mono font-bold text-indigo-300">{r.id}</td>
                       <td className="py-3 px-4 font-semibold text-slate-200">{r.collegeName}</td>
-                      <td className="py-3 px-4">
-                        <div className="text-slate-200 font-medium">{r.program}</div>
-                        <div className="text-[10px] text-emerald-400 font-semibold">{r.studentCount} Students Roster</div>
-                      </td>
+                      <td className="py-3 px-4 text-slate-200 font-medium">{r.program}</td>
                       <td className="py-3 px-4">
                         <StatusBadge status={r.status} />
+                      </td>
+
+                      {/* REQUIREMENT 2: Onboarding Sheet added by ING Member */}
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[160px]"
+                          title={`Download ${r.fileName || 'roster_sheet.csv'} (${r.fileSize || '18KB'})`}
+                        >
+                          <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                          <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
+                          <Download className="w-3 h-3 shrink-0 ml-0.5" />
+                        </button>
                       </td>
 
                       {/* Account Details Sheet Column */}
@@ -233,7 +247,7 @@ export default function MstDashboard() {
                         {r.accountSheet ? (
                           <div className="flex items-center gap-1.5">
                             <button
-                              onClick={() => handleDownloadSheet(r.accountSheet, r.id)}
+                              onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true)}
                               className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[160px]"
                               title={`Download ${r.accountSheet.fileName} (${r.accountSheet.fileSize})`}
                             >
@@ -291,10 +305,8 @@ export default function MstDashboard() {
                         )}
                       </td>
 
-                      {/* REQUIREMENT 5 & 6: Actions Column (View Student Roster removed, Orientation Completed static text rendered when finished) */}
                       <td className="py-3 px-4 text-right">
                         {isCompleted ? (
-                          /* REQUIREMENT 6: Static text pill "Orientation Completed" & remove actions button */
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
                             <CheckCheck className="w-3.5 h-3.5" /> Orientation Completed
                           </span>

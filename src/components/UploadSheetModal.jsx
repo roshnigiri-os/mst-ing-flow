@@ -8,7 +8,6 @@ export default function UploadSheetModal({ onClose }) {
   const { currentUser } = useAuth();
 
   const [program, setProgram] = useState('Computer Science Fall 2026 Batch');
-  const [studentCount, setStudentCount] = useState(45);
   const [notes, setNotes] = useState('');
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState('');
@@ -26,7 +25,7 @@ export default function UploadSheetModal({ onClose }) {
 
     createOnboardingRequest({
       program,
-      studentCount: parseInt(studentCount, 10) || 1,
+      studentCount: 45, // default batch count
       notes,
       fileName: fileName || 'uploaded_roster.csv',
       fileSize: fileSize || '18.5 KB'
@@ -77,34 +76,27 @@ export default function UploadSheetModal({ onClose }) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Total Student Roster Count</label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={studentCount}
-              onChange={(e) => setStudentCount(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            />
-          </div>
-
-          {/* CSV Upload Area */}
+          {/* REQUIREMENT 1: Make the whole upload container a fully clickable button area */}
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-300">Upload Student CSV/Excel Roster File</label>
-            <div className="border-2 border-dashed border-slate-700/80 hover:border-indigo-500/60 rounded-2xl p-6 text-center bg-slate-900/40 transition-all cursor-pointer relative">
+            <label className="block border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-2xl p-6 text-center transition-all cursor-pointer shadow-sm group">
               <input
                 type="file"
                 accept=".csv,.xlsx,.xls,.pdf,.zip"
                 onChange={handleFileUpload}
-                className="absolute inset-0 opacity-0 cursor-pointer"
+                className="hidden"
               />
-              <Upload className="w-8 h-8 text-indigo-400 mx-auto mb-2 animate-bounce" />
-              <p className="text-xs font-semibold text-slate-200">
-                {fileName ? `Selected File: ${fileName} (${fileSize})` : 'Click or Drag & Drop student roster sheet here'}
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center mx-auto mb-3 transition-all shadow-md">
+                <Upload className="w-6 h-6 animate-bounce" />
+              </div>
+              <p className="text-xs font-bold text-slate-100 group-hover:text-indigo-300 transition-colors">
+                {fileName ? `Selected File: ${fileName} (${fileSize})` : 'Click here to select & upload student roster sheet'}
               </p>
-              <p className="text-[11px] text-slate-400 mt-1">Supports CSV, XLSX up to 10MB</p>
-            </div>
+              <p className="text-[11px] text-slate-400 mt-1">Click anywhere in this box to browse CSV or XLSX files (Max 10MB)</p>
+              <span className="inline-block mt-3 px-3 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-bold shadow-md group-hover:bg-indigo-500 transition-colors">
+                Browse Files
+              </span>
+            </label>
           </div>
 
           {/* Notes */}

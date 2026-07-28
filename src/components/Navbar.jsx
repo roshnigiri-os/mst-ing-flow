@@ -1,12 +1,10 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useApp } from '../context/AppContext';
 import NotificationCenter from './NotificationCenter';
-import { Layers, Sun, Moon, LogOut, Shield, School, Users, ChevronDown } from 'lucide-react';
+import { Layers, LogOut, Shield, School, Users } from 'lucide-react';
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
-  const { theme, toggleTheme } = useApp();
 
   return (
     <nav className="glass-card sticky top-0 z-30 border-b border-slate-700/40 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xl">
@@ -32,15 +30,8 @@ export default function Navbar() {
 
       {/* User Session & Actions */}
       <div className="flex items-center gap-3 sm:gap-4">
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/60 border border-slate-700/60 text-slate-300 hover:text-amber-300 transition-all focus:outline-none"
-          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-        >
-          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-
+        {/* REQUIREMENT 3: Day/Light mode toggle removed per user request */}
+        
         {/* Notifications */}
         <NotificationCenter />
 
