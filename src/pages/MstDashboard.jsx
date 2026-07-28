@@ -83,7 +83,7 @@ export default function MstDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Mid-table Status dropdown change handler (Default: Ongoing)
+  // Mid-table Status dropdown change handler
   const handleOnboardingStatusChange = (request, newStatus) => {
     reviewAndAssignOrientation(
       request.id, 
@@ -94,7 +94,7 @@ export default function MstDashboard() {
     );
   };
 
-  // Final Actions dropdown change handler (Default: Orientation Pending)
+  // Final Actions dropdown change handler
   const handleOrientationActionChange = (request, actionChoice) => {
     if (actionChoice === 'Orientation Switch') {
       setAssigningRequest(request);
@@ -159,7 +159,7 @@ export default function MstDashboard() {
         />
       </div>
 
-      {/* Requests Queue Table (Responsive best-fit layout with centered headers) */}
+      {/* Requests Queue Table */}
       <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4 overflow-hidden">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
           {/* Workflow Stage Tabs */}
@@ -247,10 +247,8 @@ export default function MstDashboard() {
                 </tr>
               ) : (
                 filteredRequests.map(r => {
-                  // Default mid-table Status: 'Ongoing'
                   const currentStatus = r.status === 'Done' ? 'Completed' : (r.status || 'Ongoing');
                   
-                  // Default final Action: 'Orientation Pending'
                   const currentAction = (r.status === 'Orientation Completed' || r.status === 'Orientation Scheduled' || r.status === 'Orientation Switch' || r.status === 'Timing Switch' || r.status === 'Orientation Pending')
                     ? (r.status === 'Timing Switch' ? 'Orientation Switch' : r.status)
                     : 'Orientation Pending';
@@ -325,7 +323,7 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* MID-TABLE STATUS DROPDOWN: Default = Ongoing. Green Highlight when Completed */}
+                      {/* MID-TABLE STATUS DROPDOWN: Clean naming (Default and Done tags removed) */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex justify-center">
                           <select
@@ -341,8 +339,8 @@ export default function MstDashboard() {
                                 : 'bg-amber-950/80 border-amber-500/50 text-amber-200'
                             }`}
                           >
-                            <option value="Ongoing" className="bg-slate-900 text-slate-200">Ongoing (Default)</option>
-                            <option value="Completed" className="bg-slate-900 text-emerald-300 font-bold">Completed (Done)</option>
+                            <option value="Ongoing" className="bg-slate-900 text-slate-200">Ongoing</option>
+                            <option value="Completed" className="bg-slate-900 text-emerald-300 font-bold">Completed</option>
                             <option value="On Hold" className="bg-slate-900 text-rose-300">On Hold</option>
                             <option value="Issue" className="bg-slate-900 text-amber-300">Issue</option>
                           </select>
@@ -383,7 +381,7 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* FINAL ACTIONS DROPDOWN: Default = Orientation Pending. Green Highlight when Orientation Completed */}
+                      {/* FINAL ACTIONS DROPDOWN: Clean naming (Default tag removed) */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex items-center justify-center gap-1.5">
                           <select
@@ -399,7 +397,7 @@ export default function MstDashboard() {
                                 : 'bg-slate-900 border-slate-700 text-slate-300'
                             }`}
                           >
-                            <option value="Orientation Pending" className="bg-slate-900 text-slate-300">Orientation Pending (Default)</option>
+                            <option value="Orientation Pending" className="bg-slate-900 text-slate-300">Orientation Pending</option>
                             <option value="Orientation Completed" className="bg-slate-900 text-green-300 font-bold">Orientation Completed</option>
                             <option value="Orientation Scheduled" className="bg-slate-900 text-violet-300">Orientation Scheduled</option>
                             <option value="Orientation Switch" className="bg-slate-900 text-orange-300">Orientation Switch</option>
