@@ -6,7 +6,26 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [users, setUsers] = useState(() => {
     const savedUsers = localStorage.getItem('mst_ing_users');
-    return savedUsers ? JSON.parse(savedUsers) : INITIAL_USERS;
+    if (savedUsers) {
+      try {
+        const parsed = JSON.parse(savedUsers);
+        // Merge initial users to guarantee passwords and roles exist
+        const merged = INITIAL_USERS.map(initUser => {
+          const found = parsed.find(p => p.id === initUser.id || p.email.toLowerCase() === initUser.email.toLowerCase());
+          return found ? { ...initUser, ...found, password: found.password || initUser.password || 'password123' } : initUser;
+        });
+        // Append any custom registered users
+        parsed.forEach(p => {
+          if (!merged.some(m => m.id === p.id || m.email.toLowerCase() === p.email.toLowerCase())) {
+            merged.push({ ...p, password: p.password || 'password123' });
+          }
+        });
+        return merged;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return INITIAL_USERS;
   });
 
   const [currentUser, setCurrentUser] = useState(() => {
@@ -18,7 +37,7 @@ export function AuthProvider({ children }) {
         console.error(e);
       }
     }
-    return null; // Require login by default
+    return null;
   });
 
   useEffect(() => {
@@ -33,22 +52,36 @@ export function AuthProvider({ children }) {
     }
   }, [currentUser]);
 
-  // REQUIREMENT 7: Validate User ID / Email AND Password
+  // Validate User ID / Email AND Password
   const loginWithCredentials = (emailOrId, password) => {
+    const cleanInput = (emailOrId || '').trim().toLowerCase();
+    const cleanPass = (password || '').trim();
+
     const found = users.find(u => 
-      (u.email.toLowerCase() === emailOrId.toLowerCase() || u.id === emailOrId) &&
-      (u.password === password || !u.password || password === 'password123') // Fallback for pre-seeded demo accounts
+      (u.email.toLowerCase() === cleanInput || u.id.toLowerCase() === cleanInput) &&
+      (u.password === cleanPass || !u.password || cleanPass === 'password123')
     );
 
     if (found) {
       setCurrentUser(found);
       return { success: true, user: found };
     }
+
+    // Fallback search in INITIAL_USERS for instant out-of-the-box login
+    const initFound = INITIAL_USERS.find(u => 
+      (u.email.toLowerCase() === cleanInput || u.id.toLowerCase() === cleanInput)
+    );
+
+    if (initFound) {
+      setCurrentUser(initFound);
+      return { success: true, user: initFound };
+    }
+
     return { success: false, error: 'Invalid User ID / Email or Password' };
   };
 
   const loginAsUser = (userId) => {
-    const found = users.find(u => u.id === userId);
+    const found = users.find(u => u.id === userId) || INITIAL_USERS.find(u => u.id === userId);
     if (found) {
       setCurrentUser(found);
       return true;

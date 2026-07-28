@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Eye, EyeOff, Lock, Mail, CheckCircle2 } from 'lucide-react';
+import { Zap, Eye, EyeOff, Lock, Mail, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function Login() {
-  const { users, loginWithCredentials } = useAuth();
+  const { users, loginWithCredentials, loginAsUser } = useAuth();
 
   const [emailOrId, setEmailOrId] = useState('');
   const [password, setPassword] = useState('');
@@ -25,10 +25,11 @@ export default function Login() {
     }
   };
 
-  const fillDemoAccount = (user) => {
+  const handleQuickLogin = (user) => {
     setEmailOrId(user.email);
     setPassword(user.password || 'password123');
     setErrorMsg('');
+    loginAsUser(user.id);
   };
 
   return (
@@ -47,26 +48,34 @@ export default function Login() {
             Sign in to <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">MST-ING Flow</span>
           </h1>
           <p className="text-slate-400 text-sm mt-2">
-            Please enter your valid user ID / email and password to access your portal.
+            Please enter your valid user ID / email and password to access your portal, or click a demo account below.
           </p>
         </div>
 
         {/* Quick Demo Preset Selection Chips */}
-        <div className="mb-6 p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <span className="block text-[11px] font-semibold text-slate-400 mb-2 text-center uppercase tracking-wider">
-            Select Demo Account Credentials:
+        <div className="mb-6 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+          <span className="block text-[11px] font-semibold text-slate-400 text-center uppercase tracking-wider">
+            Quick 1-Click Demo Account Switcher:
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {users.map(u => (
               <button
                 key={u.id}
                 type="button"
-                onClick={() => fillDemoAccount(u)}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-indigo-950/60 border border-slate-700 hover:border-indigo-500/50 text-xs font-semibold text-slate-200 flex items-center gap-2 transition-all hover:scale-105"
+                onClick={() => handleQuickLogin(u)}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-indigo-900/80 border border-slate-700 hover:border-indigo-500/60 text-xs font-semibold text-slate-200 flex items-center gap-2 transition-all hover:scale-105 shadow-md"
+                title={`Sign in as ${u.name} (${u.role})`}
               >
-                <img src={u.avatar} alt={u.name} className="w-4 h-4 rounded-full" />
-                <span>{u.name}</span>
-                <span className="text-[10px] text-indigo-300 font-mono">({u.role})</span>
+                <img src={u.avatar} alt={u.name} className="w-5 h-5 rounded-full object-cover border border-white/20" />
+                <span className="font-bold">{u.name}</span>
+                <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold border ${
+                  u.role === 'Admin' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' :
+                  u.role === 'ING Member' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                  'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                }`}>
+                  {u.role === 'MST Member' ? (u.mstRole || 'MST') : u.role}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5 text-indigo-400" />
               </button>
             ))}
           </div>
@@ -78,7 +87,7 @@ export default function Login() {
           </div>
         )}
 
-        {/* LOGIN FORM ONLY (Registration removed per user request) */}
+        {/* LOGIN FORM */}
         <form onSubmit={handleLoginSubmit} className="max-w-md mx-auto space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">User ID / Email Address</label>
@@ -89,7 +98,7 @@ export default function Login() {
                 required
                 value={emailOrId}
                 onChange={(e) => setEmailOrId(e.target.value)}
-                placeholder="Enter your user ID or email address"
+                placeholder="e.g. rep@apex.ing.edu or contact@beacon.ing.edu"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>
@@ -104,7 +113,7 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter account password"
+                placeholder="Enter account password (default: password123)"
                 className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
               <button
