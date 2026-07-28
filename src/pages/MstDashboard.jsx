@@ -17,7 +17,8 @@ import {
   FileSpreadsheet,
   Download,
   Plus,
-  FileText
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 export default function MstDashboard() {
@@ -66,7 +67,11 @@ export default function MstDashboard() {
     return true;
   });
 
-  const handleDownloadSheet = (fileName, reqId, isAccountSheet = false) => {
+  const handleDownloadSheet = (fileName, reqId, isAccountSheet = false, sheetUrl = null) => {
+    if (sheetUrl) {
+      window.open(sheetUrl, '_blank');
+      return;
+    }
     const title = isAccountSheet ? `ACCOUNT DETAILS SHEET` : `STUDENT ROSTER SHEET`;
     const content = `${title} FOR ${reqId}\nFilename: ${fileName}\nStatus: Verified\nDate: ${new Date().toISOString()}`;
     const blob = new Blob([content], { type: 'text/plain' });
@@ -227,11 +232,9 @@ export default function MstDashboard() {
                 <th className="py-3 px-4">Program</th>
                 <th className="py-3 px-4">Onboarding Sheet (ING)</th>
                 <th className="py-3 px-4">Account Details Sheet</th>
-                {/* Status Column after Account Details Sheet */}
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Requested Orientation Date</th>
                 <th className="py-3 px-4">Assigned Handlers</th>
-                {/* Final Actions Column */}
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -252,17 +255,30 @@ export default function MstDashboard() {
                       <td className="py-3 px-4 font-semibold text-slate-200">{r.collegeName}</td>
                       <td className="py-3 px-4 text-slate-200 font-medium">{r.program}</td>
 
-                      {/* Onboarding Sheet added by ING Member */}
+                      {/* Onboarding Sheet (ING) File or Cloud Link */}
                       <td className="py-3 px-4">
-                        <button
-                          onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
-                          title={`Download ${r.fileName || 'roster_sheet.csv'}`}
-                        >
-                          <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                          <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
-                          <Download className="w-3 h-3 shrink-0 ml-0.5" />
-                        </button>
+                        {r.sheetLink ? (
+                          <a
+                            href={r.sheetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[150px]"
+                            title={`Open Cloud Sheet: ${r.sheetLink}`}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                            <span className="truncate">Open Cloud Sheet</span>
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false, null)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
+                            title={`Download ${r.fileName || 'roster_sheet.csv'}`}
+                          >
+                            <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                            <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
+                            <Download className="w-3 h-3 shrink-0 ml-0.5" />
+                          </button>
+                        )}
                       </td>
 
                       {/* Account Details Sheet Column */}
@@ -270,7 +286,7 @@ export default function MstDashboard() {
                         {r.accountSheet ? (
                           <div className="flex items-center gap-1.5">
                             <button
-                              onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true)}
+                              onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink)}
                               className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
                               title={`Download ${r.accountSheet.fileName}`}
                             >

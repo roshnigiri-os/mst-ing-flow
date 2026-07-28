@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import NotificationCenter from './NotificationCenter';
-import { Layers, LogOut, Shield, School, Users } from 'lucide-react';
+import MyProfileModal from './MyProfileModal';
+import { Layers, LogOut, Shield, School, Users, UserCog } from 'lucide-react';
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   return (
     <nav className="glass-card sticky top-0 z-30 border-b border-slate-700/40 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xl">
@@ -30,34 +32,48 @@ export default function Navbar() {
 
       {/* User Session & Actions */}
       <div className="flex items-center gap-3 sm:gap-4">
-        {/* REQUIREMENT 3: Day/Light mode toggle removed per user request */}
-        
         {/* Notifications */}
         <NotificationCenter />
 
-        {/* Active User Card */}
+        {/* Active User Card & My Profile Button */}
         {currentUser && (
-          <div className="flex items-center gap-3 pl-3 border-l border-slate-700/60">
-            <div className="relative">
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-9 h-9 rounded-full object-cover border-2 border-indigo-500/40 shadow-sm"
-              />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900" />
-            </div>
+          <div className="flex items-center gap-2 sm:gap-3 pl-3 border-l border-slate-700/60">
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-slate-800/80 transition-all text-left group"
+              title="Click to view & edit My Profile settings"
+            >
+              <div className="relative">
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-9 h-9 rounded-full object-cover border-2 border-indigo-500/40 shadow-sm group-hover:border-indigo-400"
+                />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900" />
+              </div>
 
-            <div className="hidden md:block text-left">
-              <div className="text-xs font-bold text-slate-200 truncate max-w-[140px]">
-                {currentUser.name}
+              <div className="hidden md:block">
+                <div className="text-xs font-bold text-slate-200 truncate max-w-[130px] group-hover:text-indigo-300 transition-colors">
+                  {currentUser.name}
+                </div>
+                <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                  {currentUser.role === 'Admin' && <Shield className="w-3 h-3 text-purple-400" />}
+                  {currentUser.role === 'MST Member' && <Users className="w-3 h-3 text-indigo-400" />}
+                  {currentUser.role === 'ING Member' && <School className="w-3 h-3 text-emerald-400" />}
+                  <span>{currentUser.role === 'MST Member' ? (currentUser.mstRole || 'MST Member') : currentUser.role}</span>
+                </div>
               </div>
-              <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                {currentUser.role === 'Admin' && <Shield className="w-3 h-3 text-purple-400" />}
-                {currentUser.role === 'MST Member' && <Users className="w-3 h-3 text-indigo-400" />}
-                {currentUser.role === 'ING Member' && <School className="w-3 h-3 text-emerald-400" />}
-                <span>{currentUser.role === 'MST Member' ? (currentUser.mstRole || 'MST Member') : currentUser.role}</span>
-              </div>
-            </div>
+            </button>
+
+            {/* My Profile Quick Button */}
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="px-2.5 py-1.5 rounded-xl bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-500/40 text-indigo-300 text-xs font-semibold flex items-center gap-1 transition-all"
+              title="My Profile Settings"
+            >
+              <UserCog className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">My Profile</span>
+            </button>
 
             <button
               onClick={logout}
@@ -70,6 +86,10 @@ export default function Navbar() {
           </div>
         )}
       </div>
+
+      {showProfileModal && (
+        <MyProfileModal onClose={() => setShowProfileModal(false)} />
+      )}
     </nav>
   );
 }

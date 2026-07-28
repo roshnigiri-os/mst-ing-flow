@@ -40,15 +40,11 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('mst_ing_theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.add('dark');
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setTheme('dark');
   };
 
   const addAuditLog = (action, user, role, details) => {
@@ -93,7 +89,7 @@ export function AppProvider({ children }) {
     setNotifications([]);
   };
 
-  // STEP 1: ING Uploads sheet
+  // STEP 1: ING Uploads sheet or cloud link (Dual Submission Options)
   const createOnboardingRequest = (requestData, currentUser) => {
     const newReqId = `REQ-2026-${String(requests.length + 1).padStart(3, '0')}`;
     const newRequest = {
@@ -103,9 +99,11 @@ export function AppProvider({ children }) {
       submitterName: currentUser.name,
       submitterEmail: currentUser.email,
       program: requestData.program,
-      studentCount: requestData.students ? requestData.students.length : requestData.studentCount || 0,
-      fileName: requestData.fileName || 'student_roster.csv',
-      fileSize: requestData.fileSize || '15.2 KB',
+      studentCount: requestData.studentCount || 45,
+      fileName: requestData.fileName || (requestData.sheetLink ? 'Google_Sheets_Cloud_Roster' : 'student_roster.csv'),
+      fileSize: requestData.fileSize || 'Cloud Link',
+      sheetLink: requestData.sheetLink || null,
+      submissionType: requestData.sheetLink ? 'link' : 'file',
       createdAt: new Date().toISOString(),
       status: 'Pending',
       preferredDate: null,
@@ -114,7 +112,7 @@ export function AppProvider({ children }) {
       notes: requestData.notes || '',
       rescheduleComment: null,
       accountSheet: null,
-      students: requestData.students || []
+      students: []
     };
 
     setRequests(prev => [newRequest, ...prev]);
@@ -123,8 +121,8 @@ export function AppProvider({ children }) {
     addAuditLog('SHEET_UPLOAD', currentUser.name, currentUser.role, `Uploaded new roster ${newReqId} for ${newRequest.collegeName}`);
     addNotification({
       targetRole: 'MST Member',
-      title: 'New Onboarding Sheet Uploaded',
-      message: `${currentUser.name} (${newRequest.collegeName}) uploaded request ${newReqId} with ${newRequest.studentCount} students.`,
+      title: 'New Onboarding Sheet Submitted',
+      message: `${currentUser.name} (${newRequest.collegeName}) submitted request ${newReqId} (${requestData.sheetLink ? 'Cloud Sheet Link' : 'Uploaded File'}).`,
       type: 'info',
       requestId: newReqId
     });
@@ -132,7 +130,24 @@ export function AppProvider({ children }) {
     return newRequest;
   };
 
-  // STEP 3: MST Actions onboarding -> Status: Onboarding Completed
+  // Update existing onboarding request (Editable Pipeline)
+  const updateOnboardingRequest = (requestId, updatedFields, user) => {
+    let updatedReq = null;
+
+    setRequests(prev => prev.map(req => {
+      if (req.id === requestId) {
+        updatedReq = { ...req, ...updatedFields };
+        return updatedReq;
+      }
+      return req;
+    }));
+
+    if (updatedReq) {
+      addAuditLog('REQUEST_UPDATED', user.name, user.role, `Updated onboarding request ${requestId}`);
+    }
+  };
+
+  // STEP 3: MST Actions onboarding
   const completeOnboardingTask = (requestId, mstUser) => {
     let targetReq = null;
 
@@ -149,14 +164,14 @@ export function AppProvider({ children }) {
       addNotification({
         targetUserId: targetReq.submittedBy,
         title: 'Onboarding Marked Completed!',
-        message: `MST Team member ${mstUser.name} has processed and completed onboarding for ${requestId}. You can now pick your preferred Orientation Date.`,
+        message: `MST Team member ${mstUser.name} processed onboarding for ${requestId}. Please schedule your orientation slot.`,
         type: 'success',
         requestId: requestId
       });
     }
   };
 
-  // Attach Account Details Sheet to Request (Requirement #2)
+  // Attach Account Details Sheet to Request
   const attachAccountSheet = (requestId, fileData, mstUser) => {
     let targetReq = null;
 
@@ -168,7 +183,8 @@ export function AppProvider({ children }) {
             fileName: fileData.fileName,
             fileSize: fileData.fileSize || '32.0 KB',
             uploadedAt: new Date().toISOString(),
-            uploadedBy: mstUser.name
+            uploadedBy: mstUser.name,
+            sheetLink: fileData.sheetLink || null
           }
         };
         return targetReq;
@@ -196,7 +212,7 @@ export function AppProvider({ children }) {
       if (req.id === requestId) {
         targetReq = {
           ...req,
-          status: 'Date Submitted',
+          status: 'Orientation Scheduled',
           preferredDate: date,
           preferredTime: time,
           notes: notes ? `${req.notes}\n[Date Note]: ${notes}` : req.notes
@@ -228,7 +244,7 @@ export function AppProvider({ children }) {
           ...req,
           status: newStatus,
           assignedMstMembers: assignedMstIds || req.assignedMstMembers,
-          rescheduleComment: newStatus === 'Timing Switch' ? comment : null
+          rescheduleComment: (newStatus === 'Orientation Switch' || newStatus === 'Timing Switch' || newStatus === 'Issue' || newStatus === 'On Hold') ? comment : null
         };
         return targetReq;
       }
@@ -239,16 +255,16 @@ export function AppProvider({ children }) {
       addAuditLog('ORIENTATION_REVIEWED', mstUser.name, mstUser.role, `Updated ${requestId} status to ${newStatus}. Assigned MST IDs: ${assignedMstIds.join(', ')}`);
       
       let notifType = 'info';
-      if (newStatus === 'Approved') notifType = 'success';
+      if (newStatus === 'Orientation Scheduled' || newStatus === 'Approved') notifType = 'success';
       if (newStatus === 'On Hold') notifType = 'warning';
-      if (newStatus === 'Timing Switch') notifType = 'error';
+      if (newStatus === 'Orientation Switch' || newStatus === 'Issue') notifType = 'error';
 
       addNotification({
         targetUserId: targetReq.submittedBy,
-        title: `Orientation Request ${newStatus}`,
-        message: newStatus === 'Timing Switch' 
-          ? `MST Team has requested a timing switch for ${requestId}. Comment: "${comment}"` 
-          : `Orientation for ${requestId} has been updated to ${newStatus} by ${mstUser.name}.`,
+        title: `Orientation Request Status: ${newStatus}`,
+        message: (newStatus === 'Orientation Switch' || newStatus === 'Issue')
+          ? `MST Team requested a timing switch for ${requestId}. Comment: "${comment}"` 
+          : `Orientation status for ${requestId} has been updated to ${newStatus} by ${mstUser.name}.`,
         type: notifType,
         requestId: requestId
       });
@@ -270,6 +286,7 @@ export function AppProvider({ children }) {
       setActiveNotificationRequest,
       toggleTheme,
       createOnboardingRequest,
+      updateOnboardingRequest,
       completeOnboardingTask,
       attachAccountSheet,
       submitOrientationDate,

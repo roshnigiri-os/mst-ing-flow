@@ -5,6 +5,7 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import UploadSheetModal from '../components/UploadSheetModal';
 import ScheduleDateModal from '../components/ScheduleDateModal';
+import EditRequestModal from '../components/EditRequestModal';
 import { 
   School, 
   Plus, 
@@ -13,18 +14,21 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Sparkles,
-  Download
+  Download,
+  ExternalLink,
+  Edit3,
+  FileText
 } from 'lucide-react';
 
 export default function IngDashboard() {
-  // FIX: Destructure users from useAuth(), NOT useApp()
   const { currentUser, users = [] } = useAuth();
   const { requests = [], activeNotificationRequest, setActiveNotificationRequest } = useApp();
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [schedulingRequest, setSchedulingRequest] = useState(null);
+  const [editingRequest, setEditingRequest] = useState(null);
 
-  // Handle notification redirection (Requirement #3)
+  // Handle notification redirection
   useEffect(() => {
     if (activeNotificationRequest) {
       const found = (requests || []).find(r => r.id === activeNotificationRequest);
@@ -35,13 +39,17 @@ export default function IngDashboard() {
     }
   }, [activeNotificationRequest, requests, setActiveNotificationRequest]);
 
-  // Filter requests belonging to this ING College or user
-  const myRequests = (requests || []).filter(r => 
-    !currentUser ||
-    r.submittedBy === currentUser.id || 
-    r.collegeName === currentUser.collegeName ||
-    currentUser.role === 'ING Member'
-  );
+  // FEATURE 1: Strict School-Based Data Isolation for ING Members
+  const myRequests = (requests || []).filter(r => {
+    if (!currentUser) return false;
+
+    // Strict matching by user ID or exact college name
+    const matchesUser = r.submittedBy === currentUser.id;
+    const matchesCollege = currentUser.collegeName && r.collegeName && 
+      r.collegeName.toLowerCase().trim() === currentUser.collegeName.toLowerCase().trim();
+
+    return matchesUser || matchesCollege;
+  });
 
   const totalUploaded = myRequests.length;
   const onboardingCompletedCount = myRequests.filter(r => r.status === 'Done' || r.status === 'Onboarding Completed' || r.status === 'Completed').length;
@@ -50,6 +58,10 @@ export default function IngDashboard() {
 
   const handleDownloadSheet = (accountSheet, reqId) => {
     if (!accountSheet) return;
+    if (accountSheet.sheetLink) {
+      window.open(accountSheet.sheetLink, '_blank');
+      return;
+    }
     const content = `ACCOUNT DETAILS SHEET FOR ${reqId}\nFilename: ${accountSheet.fileName}\nUploaded By: ${accountSheet.uploadedBy || 'MST'}\nDate: ${accountSheet.uploadedAt || new Date().toISOString()}\nStatus: Verified`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
@@ -69,11 +81,11 @@ export default function IngDashboard() {
             <School className="w-6 h-6 text-emerald-400" />
             <h1 className="text-2xl font-black text-slate-100">{currentUser?.collegeName || 'ING College Portal'}</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              ING Member
+              ING Member Portal
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Submit student onboarding sheets, track MST verification, and reserve orientation dates
+            Isolated school onboarding pipeline for {currentUser?.collegeName || 'Partner Institution'}
           </p>
         </div>
 
@@ -92,7 +104,7 @@ export default function IngDashboard() {
           value={totalUploaded}
           icon={FileSpreadsheet}
           color="emerald"
-          subtext="Total roster sheets uploaded"
+          subtext={`School roster requests for ${currentUser?.collegeName || 'College'}`}
         />
         <StatCard
           title="Action Required"
@@ -122,7 +134,9 @@ export default function IngDashboard() {
         <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-sm font-bold text-slate-100">Onboarding Request Pipeline</h2>
+            <h2 className="text-sm font-bold text-slate-100">
+              Onboarding Request Pipeline ({currentUser?.collegeName || 'My School'})
+            </h2>
           </div>
           <span className="text-xs text-slate-400 font-mono">Total {myRequests.length} Sheets</span>
         </div>
@@ -134,16 +148,18 @@ export default function IngDashboard() {
                 <th className="py-3 px-4">Request ID</th>
                 <th className="py-3 px-4">Program & Cohort</th>
                 <th className="py-3 px-4">Onboarding Status</th>
+                <th className="py-3 px-4">Uploaded Sheet / Link</th>
                 <th className="py-3 px-4">Account Details Sheet</th>
                 <th className="py-3 px-4">Orientation Date & Time</th>
                 <th className="py-3 px-4">Assigned MST Team</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {myRequests.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-8 text-slate-400">
-                    No onboarding sheets uploaded yet. Click "Upload Onboarding Sheet" to get started.
+                  <td colSpan="8" className="text-center py-8 text-slate-400">
+                    No onboarding sheets uploaded for {currentUser?.collegeName || 'this school'} yet. Click "Upload Onboarding Sheet" to get started.
                   </td>
                 </tr>
               ) : (
@@ -154,11 +170,33 @@ export default function IngDashboard() {
                     <td className="py-3 px-4">
                       <StatusBadge status={r.status} />
                     </td>
+
+                    {/* FEATURE 5: Uploaded Sheet / Link rendering */}
+                    <td className="py-3 px-4">
+                      {r.sheetLink ? (
+                        <a
+                          href={r.sheetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[170px]"
+                          title={`Open Cloud Sheet: ${r.sheetLink}`}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                          <span className="truncate">Open Cloud Sheet</span>
+                        </a>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[170px]">
+                          <FileText className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
+                        </span>
+                      )}
+                    </td>
+
                     <td className="py-3 px-4">
                       {r.accountSheet ? (
                         <button
                           onClick={() => handleDownloadSheet(r.accountSheet, r.id)}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[180px]"
+                          className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[170px]"
                           title={`Download ${r.accountSheet.fileName}`}
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
@@ -169,6 +207,7 @@ export default function IngDashboard() {
                         <span className="text-slate-500 italic text-[11px]">Pending MST</span>
                       )}
                     </td>
+
                     <td 
                       onClick={() => setSchedulingRequest(r)}
                       className="py-3 px-4 text-slate-300 cursor-pointer hover:bg-indigo-950/30 transition-colors rounded-lg"
@@ -185,6 +224,7 @@ export default function IngDashboard() {
                         </span>
                       )}
                     </td>
+
                     <td className="py-3 px-4">
                       {r.assignedMstMembers && r.assignedMstMembers.length > 0 ? (
                         <div className="flex items-center gap-1">
@@ -205,6 +245,27 @@ export default function IngDashboard() {
                         <span className="text-[11px] text-slate-500">Unassigned</span>
                       )}
                     </td>
+
+                    {/* FEATURE 3: Editable Request Pipeline Row Actions */}
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setEditingRequest(r)}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          title="Edit request program details or sheet"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-indigo-400" /> Edit
+                        </button>
+
+                        <button
+                          onClick={() => setSchedulingRequest(r)}
+                          className="px-2.5 py-1 rounded-lg bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 border border-violet-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          title="Schedule orientation date"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-violet-400" /> Schedule
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -222,6 +283,13 @@ export default function IngDashboard() {
         <ScheduleDateModal
           request={schedulingRequest}
           onClose={() => setSchedulingRequest(null)}
+        />
+      )}
+
+      {editingRequest && (
+        <EditRequestModal
+          request={editingRequest}
+          onClose={() => setEditingRequest(null)}
         />
       )}
     </div>
