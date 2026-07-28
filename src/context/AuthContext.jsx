@@ -3,23 +3,38 @@ import { INITIAL_USERS } from '../mock/initialData';
 
 const AuthContext = createContext();
 
+// Legacy emails to strip out
+const LEGACY_EMAILS = [
+  'admin@msting.com',
+  'sarah.j@mst.com',
+  'david.c@mst.com',
+  'rep@apex.ing.edu',
+  'contact@beacon.ing.edu',
+  'info@crestview.ing.edu'
+];
+
 export function AuthProvider({ children }) {
   const [users, setUsers] = useState(() => {
     const savedUsers = localStorage.getItem('mst_ing_users');
     if (savedUsers) {
       try {
         const parsed = JSON.parse(savedUsers);
-        // Merge initial users to guarantee passwords and roles exist
+        // Filter out legacy accounts
+        const cleaned = parsed.filter(p => !LEGACY_EMAILS.includes(p.email?.toLowerCase()));
+
+        // Merge initial official 5 users while PRESERVING user-set custom passwords!
         const merged = INITIAL_USERS.map(initUser => {
-          const found = parsed.find(p => p.id === initUser.id || p.email.toLowerCase() === initUser.email.toLowerCase());
-          return found ? { ...initUser, ...found, password: found.password || initUser.password || 'password123' } : initUser;
+          const found = cleaned.find(p => p.id === initUser.id || p.email?.toLowerCase() === initUser.email?.toLowerCase());
+          return found ? { ...initUser, ...found, password: found.password || initUser.password } : initUser;
         });
-        // Append any custom registered users
-        parsed.forEach(p => {
-          if (!merged.some(m => m.id === p.id || m.email.toLowerCase() === p.email.toLowerCase())) {
-            merged.push({ ...p, password: p.password || 'password123' });
+
+        // Append any custom registered users created by Admin
+        cleaned.forEach(p => {
+          if (!merged.some(m => m.id === p.id || m.email?.toLowerCase() === p.email?.toLowerCase())) {
+            merged.push(p);
           }
         });
+
         return merged;
       } catch (e) {
         console.error(e);
@@ -32,7 +47,11 @@ export function AuthProvider({ children }) {
     const savedUser = localStorage.getItem('mst_ing_current_user');
     if (savedUser) {
       try {
-        return JSON.parse(savedUser);
+        const parsed = JSON.parse(savedUser);
+        if (LEGACY_EMAILS.includes(parsed.email?.toLowerCase())) {
+          return null;
+        }
+        return parsed;
       } catch (e) {
         console.error(e);
       }
@@ -57,9 +76,10 @@ export function AuthProvider({ children }) {
     const cleanInput = (emailOrId || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
+    // Check current state users (preserving custom passwords set by user)
     const found = users.find(u => 
-      (u.email.toLowerCase() === cleanInput || u.id.toLowerCase() === cleanInput) &&
-      (u.password === cleanPass || !u.password || cleanPass === 'password123')
+      (u.email?.toLowerCase() === cleanInput || u.id?.toLowerCase() === cleanInput) &&
+      (u.password === cleanPass || (!u.password && cleanPass === 'password123'))
     );
 
     if (found) {
@@ -67,9 +87,10 @@ export function AuthProvider({ children }) {
       return { success: true, user: found };
     }
 
-    // Fallback search in INITIAL_USERS for instant out-of-the-box login
+    // Fallback match in INITIAL_USERS
     const initFound = INITIAL_USERS.find(u => 
-      (u.email.toLowerCase() === cleanInput || u.id.toLowerCase() === cleanInput)
+      (u.email?.toLowerCase() === cleanInput || u.id?.toLowerCase() === cleanInput) &&
+      (u.password === cleanPass || cleanPass === 'password123')
     );
 
     if (initFound) {

@@ -1,192 +1,146 @@
+// Central Data Store for MST-ING Flow Platform
+
 export const INITIAL_USERS = [
   {
     id: 'u-admin-1',
     name: 'System Administrator',
-    email: 'admin@msting.com',
+    email: 'roshni.giri@innovatetech.co',
     password: 'password123',
     role: 'Admin',
     department: 'Global Operations',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-    createdAt: '2026-01-10T08:00:00.000Z'
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=RoshniAdmin'
   },
   {
     id: 'u-mst-1',
-    name: 'Sarah Jenkins',
-    email: 'sarah.j@mst.com',
-    password: 'password123',
-    role: 'MST Member',
-    mstRole: 'MST Lead',
-    department: 'MST Core Team',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-    createdAt: '2026-01-15T09:30:00.000Z'
-  },
-  {
-    id: 'u-mst-2',
-    name: 'David Chen',
-    email: 'david.c@mst.com',
+    name: 'MST_Account1',
+    email: 'mstaccount1@mst.sg',
     password: 'password123',
     role: 'MST Member',
     mstRole: 'MST Specialist',
-    department: 'Technical Onboarding',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-    createdAt: '2026-02-01T11:00:00.000Z'
+    department: 'Operations',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MSTAccount1'
   },
   {
-    id: 'u-mst-3',
-    name: 'Elena Rostova',
-    email: 'elena.r@mst.com',
+    id: 'u-mst-2',
+    name: 'MST_Account2',
+    email: 'mstaccount2@mst.sg',
     password: 'password123',
     role: 'MST Member',
-    mstRole: 'Orientation Specialist',
-    department: 'Student Logistics',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
-    createdAt: '2026-02-12T14:20:00.000Z'
+    mstRole: 'MST Specialist',
+    department: 'Operations',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MSTAccount2'
   },
   {
     id: 'u-ing-1',
-    name: 'Apex Institute Tech Rep',
-    email: 'rep@apex.ing.edu',
+    name: 'Apex_ING',
+    email: 'apexaccount@mst.sg',
     password: 'password123',
     role: 'ING Member',
-    collegeName: 'Apex Tech College',
-    department: 'Academic Partnerships',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
-    createdAt: '2026-03-01T10:00:00.000Z'
+    collegeName: 'Apex College',
+    department: 'Admissions & Onboarding',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ApexING'
   },
   {
     id: 'u-ing-2',
-    name: 'Beacon Univ Admin',
-    email: 'contact@beacon.ing.edu',
+    name: 'HCK_ING 1',
+    email: 'hckaccount1@mst.sg',
     password: 'password123',
     role: 'ING Member',
-    collegeName: 'Beacon State University',
-    department: 'Student Affairs',
-    avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=150',
-    createdAt: '2026-03-10T12:00:00.000Z'
-  },
-  {
-    id: 'u-ing-3',
-    name: 'Crestview Coordinator',
-    email: 'info@crestview.ing.edu',
-    password: 'password123',
-    role: 'ING Member',
-    collegeName: 'Crestview Academy',
-    department: 'Admissions & Onboarding',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
-    createdAt: '2026-03-15T15:30:00.000Z'
+    collegeName: 'HCK',
+    department: 'Academic Partnerships',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=HCKING1'
   }
 ];
 
 export const INITIAL_REQUESTS = [
   {
     id: 'REQ-2026-001',
-    collegeName: 'Apex Tech College',
+    collegeName: 'Apex College',
     submittedBy: 'u-ing-1',
-    submitterName: 'Apex Institute Tech Rep',
-    submitterEmail: 'rep@apex.ing.edu',
-    program: 'B.Tech Computer Science 2026 Batch',
-    studentCount: 45,
+    submitterName: 'Apex_ING',
+    submitterEmail: 'apexaccount@mst.sg',
+    program: 'Computer Science Fall 2026 Batch',
+    studentCount: 48,
     fileName: 'apex_cs_2026_roster.csv',
-    fileSize: '18.4 KB',
-    createdAt: '2026-07-25T09:30:00.000Z',
-    status: 'Done',
+    fileSize: '24.5 KB',
+    sheetLink: null,
+    submissionType: 'file',
+    createdAt: '2026-07-20T10:30:00Z',
+    status: 'Completed',
     preferredDate: '2026-08-05',
     preferredTime: '10:00 AM - 12:00 PM',
-    assignedMstMembers: ['u-mst-1', 'u-mst-2'],
-    notes: 'Full cohort of 45 students needing system access and orientation on MST workflows.',
+    assignedMstMembers: ['u-mst-1'],
+    notes: 'Requires 45 lab computers with Python 3.11 installed.',
     rescheduleComment: null,
     accountSheet: {
-      fileName: 'Apex_CS_AccountDetails_Master.xlsx',
-      fileSize: '24.5 KB',
-      uploadedAt: '2026-07-25T11:00:00.000Z',
-      uploadedBy: 'Sarah Jenkins'
-    },
-    students: [
-      { id: 'S101', name: 'Aarav Sharma', email: 'aarav@apex.edu', major: 'CS', phone: '+1 555-0192' },
-      { id: 'S102', name: 'Sophia Miller', email: 'sophia@apex.edu', major: 'CS', phone: '+1 555-0193' }
-    ]
+      fileName: 'apex_cs2026_account_details.xlsx',
+      fileSize: '42.0 KB',
+      uploadedAt: '2026-07-22T14:15:00Z',
+      uploadedBy: 'MST_Account1'
+    }
   },
   {
     id: 'REQ-2026-002',
-    collegeName: 'Beacon State University',
+    collegeName: 'HCK',
     submittedBy: 'u-ing-2',
-    submitterName: 'Beacon Univ Admin',
-    submitterEmail: 'contact@beacon.ing.edu',
-    program: 'School of Management Fall Orientation',
-    studentCount: 120,
-    fileName: 'beacon_som_fall_students.xlsx',
-    fileSize: '42.1 KB',
-    createdAt: '2026-07-26T14:15:00.000Z',
-    status: 'Done',
-    preferredDate: '2026-08-12',
-    preferredTime: '01:00 PM - 04:00 PM',
-    assignedMstMembers: ['u-mst-1'],
-    notes: 'Includes MBA & BBA cohorts. Onboarding verified by MST.',
-    rescheduleComment: null,
-    accountSheet: {
-      fileName: 'Beacon_Management_Portal_Credentials.pdf',
-      fileSize: '150.2 KB',
-      uploadedAt: '2026-07-26T15:30:00.000Z',
-      uploadedBy: 'David Chen'
-    },
-    students: [
-      { id: 'B201', name: 'Noah Wilson', email: 'noah@beacon.edu', major: 'MBA', phone: '+1 555-0211' }
-    ]
-  },
-  {
-    id: 'REQ-2026-003',
-    collegeName: 'Crestview Academy',
-    submittedBy: 'u-ing-3',
-    submitterName: 'Crestview Coordinator',
-    submitterEmail: 'info@crestview.ing.edu',
-    program: 'Healthcare & Nursing Orientation',
-    studentCount: 28,
-    fileName: 'crestview_nursing_july.csv',
-    fileSize: '12.8 KB',
-    createdAt: '2026-07-27T08:00:00.000Z',
+    submitterName: 'HCK_ING 1',
+    submitterEmail: 'hckaccount1@mst.sg',
+    program: 'Business Administration Cohort A',
+    studentCount: 65,
+    fileName: 'hck_bus_admin_roster.xlsx',
+    fileSize: '31.2 KB',
+    sheetLink: 'https://docs.google.com/spreadsheets/d/sample-hck-roster',
+    submissionType: 'link',
+    createdAt: '2026-07-23T11:00:00Z',
     status: 'Pending',
     preferredDate: null,
     preferredTime: null,
-    assignedMstMembers: [],
-    notes: 'Newly uploaded sheet awaiting MST actioning and review.',
+    assignedMstMembers: ['u-mst-2'],
+    notes: 'Orientation for international exchange students.',
     rescheduleComment: null,
-    accountSheet: null,
-    students: []
+    accountSheet: null
   }
 ];
 
 export const INITIAL_NOTIFICATIONS = [
   {
     id: 'notif-1',
-    targetUserId: 'u-ing-2',
+    targetUserId: 'u-ing-1',
     targetRole: 'ING Member',
-    title: 'Onboarding Sheet Verified',
-    message: 'MST Lead Sarah Jenkins marked REQ-2026-002 as Done. Orientation schedule confirmed.',
+    title: 'Onboarding Verified & Completed',
+    message: 'MST_Account1 verified onboarding sheet REQ-2026-001 for Apex College.',
     type: 'success',
-    requestId: 'REQ-2026-002',
+    requestId: 'REQ-2026-001',
     read: false,
-    timestamp: '2026-07-26T16:00:00.000Z'
+    timestamp: '2026-07-22T14:15:00Z'
   },
   {
     id: 'notif-2',
-    targetUserId: null,
     targetRole: 'MST Member',
-    title: 'New Sheet Uploaded',
-    message: 'Crestview Academy uploaded a new onboarding sheet REQ-2026-003.',
+    title: 'New Sheet Submitted by HCK',
+    message: 'HCK_ING 1 submitted roster sheet REQ-2026-002.',
     type: 'info',
-    requestId: 'REQ-2026-003',
+    requestId: 'REQ-2026-002',
     read: false,
-    timestamp: '2026-07-27T08:01:00.000Z'
+    timestamp: '2026-07-23T11:00:00Z'
   }
 ];
 
 export const INITIAL_AUDIT_LOGS = [
   {
-    id: 'log-1',
-    action: 'USER_LOGIN',
-    user: 'Sarah Jenkins',
+    id: 'log-101',
+    action: 'SHEET_UPLOAD',
+    user: 'Apex_ING',
+    role: 'ING Member',
+    details: 'Uploaded onboarding request REQ-2026-001 for Apex College',
+    timestamp: '2026-07-20T10:30:00Z'
+  },
+  {
+    id: 'log-102',
+    action: 'STATUS_UPDATE',
+    user: 'MST_Account1',
     role: 'MST Member',
-    details: 'Logged into MST Portal successfully.',
-    timestamp: '2026-07-27T08:15:00.000Z'
+    details: 'Updated onboarding status for REQ-2026-001 to Completed',
+    timestamp: '2026-07-22T14:15:00Z'
   }
 ];
