@@ -8,7 +8,6 @@ import AttachDocumentModal from '../components/AttachDocumentModal';
 import ActionOnboardingModal from '../components/ActionOnboardingModal';
 import { 
   Users, 
-  CheckCircle2, 
   Clock, 
   Calendar, 
   CheckCheck, 
@@ -18,12 +17,13 @@ import {
   FileSpreadsheet,
   Download,
   Plus,
-  FileText
+  FileText,
+  ChevronDown
 } from 'lucide-react';
 
 export default function MstDashboard() {
   const { currentUser, users } = useAuth();
-  const { requests, activeNotificationRequest, setActiveNotificationRequest } = useApp();
+  const { requests, reviewAndAssignOrientation, activeNotificationRequest, setActiveNotificationRequest } = useApp();
 
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,9 +36,9 @@ export default function MstDashboard() {
     if (activeNotificationRequest) {
       const found = requests.find(r => r.id === activeNotificationRequest);
       if (found) {
-        if (found.status === 'Done' || found.status === 'Approved' || found.status === 'Issue' || found.status === 'Timing Switch' || found.status === 'On Hold') {
+        if (found.status === 'Orientation Scheduled' || found.status === 'Orientation Completed' || found.status === 'Orientation Switch' || found.status === 'Approved') {
           setAssigningRequest(found);
-        } else if (found.status === 'Pending') {
+        } else {
           setActioningRequest(found);
         }
       }
@@ -49,8 +49,8 @@ export default function MstDashboard() {
   // Metrics
   const totalRequests = requests.length;
   const pendingOnboardingCount = requests.filter(r => r.status === 'Pending').length;
-  const dateSubmittedCount = requests.filter(r => r.preferredDate !== null && r.status !== 'Done').length;
-  const completedCount = requests.filter(r => r.status === 'Done' || r.status === 'Completed').length;
+  const dateSubmittedCount = requests.filter(r => r.preferredDate !== null && r.status !== 'Orientation Completed').length;
+  const completedCount = requests.filter(r => r.status === 'Orientation Completed' || r.status === 'Completed').length;
 
   const filteredRequests = requests.filter(r => {
     const matchesSearch = 
@@ -61,8 +61,8 @@ export default function MstDashboard() {
     if (!matchesSearch) return false;
 
     if (activeTab === 'pending') return r.status === 'Pending';
-    if (activeTab === 'date-approval') return r.preferredDate !== null && r.status !== 'Done';
-    if (activeTab === 'completed') return r.status === 'Done' || r.status === 'Completed';
+    if (activeTab === 'date-approval') return r.preferredDate !== null && r.status !== 'Orientation Completed';
+    if (activeTab === 'completed') return r.status === 'Orientation Completed' || r.status === 'Completed';
 
     return true;
   });
@@ -79,6 +79,32 @@ export default function MstDashboard() {
     window.URL.revokeObjectURL(url);
   };
 
+  // Status dropdown change handler (Status column after Account Details Sheet)
+  const handleOnboardingStatusChange = (request, newStatus) => {
+    reviewAndAssignOrientation(
+      request.id, 
+      newStatus, 
+      request.assignedMstMembers || [currentUser.id], 
+      `Status updated to ${newStatus}`, 
+      currentUser
+    );
+  };
+
+  // Orientation Actions dropdown change handler (Actions column at last)
+  const handleOrientationActionChange = (request, actionChoice) => {
+    if (actionChoice === 'Orientation Switch') {
+      setAssigningRequest(request);
+    } else {
+      reviewAndAssignOrientation(
+        request.id,
+        actionChoice,
+        request.assignedMstMembers || [currentUser.id],
+        null,
+        currentUser
+      );
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Banner */}
@@ -92,7 +118,7 @@ export default function MstDashboard() {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Review incoming ING college sheets, attach account details documents, mark onboarding completion, and schedule orientation sessions
+            Review incoming ING college sheets, attach account details documents, update onboarding status, and schedule orientation sessions
           </p>
         </div>
       </div>
@@ -107,7 +133,7 @@ export default function MstDashboard() {
           subtext="Total partner requests"
         />
         <StatCard
-          title="Pending Onboarding"
+          title="Pending Verification"
           value={pendingOnboardingCount}
           icon={Clock}
           color="amber"
@@ -129,7 +155,7 @@ export default function MstDashboard() {
         />
       </div>
 
-      {/* Requests Queue */}
+      {/* Requests Queue Table */}
       <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
           {/* Workflow Stage Tabs */}
@@ -200,12 +226,13 @@ export default function MstDashboard() {
                 <th className="py-3 px-4">Request ID</th>
                 <th className="py-3 px-4">College Name</th>
                 <th className="py-3 px-4">Program</th>
-                <th className="py-3 px-4">Onboarding Status</th>
-                {/* REQUIREMENT 2: Column to show Onboarding sheet added by ING member */}
                 <th className="py-3 px-4">Onboarding Sheet (ING)</th>
                 <th className="py-3 px-4">Account Details Sheet</th>
+                {/* USER FEEDBACK REFINEMENT 1: Column named "Status" after Account Details Sheet */}
+                <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Requested Orientation Date</th>
                 <th className="py-3 px-4">Assigned Handlers</th>
+                {/* USER REFINEMENT 2: Final Actions Column */}
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -218,23 +245,20 @@ export default function MstDashboard() {
                 </tr>
               ) : (
                 filteredRequests.map(r => {
-                  const isCompleted = r.status === 'Done' || r.status === 'Completed';
+                  const currentStatus = r.status === 'Done' ? 'Completed' : r.status;
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3 px-4 font-mono font-bold text-indigo-300">{r.id}</td>
                       <td className="py-3 px-4 font-semibold text-slate-200">{r.collegeName}</td>
                       <td className="py-3 px-4 text-slate-200 font-medium">{r.program}</td>
-                      <td className="py-3 px-4">
-                        <StatusBadge status={r.status} />
-                      </td>
 
-                      {/* REQUIREMENT 2: Onboarding Sheet added by ING Member */}
+                      {/* Onboarding Sheet added by ING Member */}
                       <td className="py-3 px-4">
                         <button
                           onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[160px]"
-                          title={`Download ${r.fileName || 'roster_sheet.csv'} (${r.fileSize || '18KB'})`}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
+                          title={`Download ${r.fileName || 'roster_sheet.csv'}`}
                         >
                           <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
                           <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
@@ -248,8 +272,8 @@ export default function MstDashboard() {
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true)}
-                              className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[160px]"
-                              title={`Download ${r.accountSheet.fileName} (${r.accountSheet.fileSize})`}
+                              className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
+                              title={`Download ${r.accountSheet.fileName}`}
                             >
                               <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
                               <span className="truncate">{r.accountSheet.fileName}</span>
@@ -258,7 +282,7 @@ export default function MstDashboard() {
                             <button
                               onClick={() => setAttachingRequest(r)}
                               className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200"
-                              title="Re-attach / Update document"
+                              title="Re-attach document"
                             >
                               <Paperclip className="w-3 h-3" />
                             </button>
@@ -271,6 +295,19 @@ export default function MstDashboard() {
                             <Plus className="w-3.5 h-3.5 text-indigo-400" /> Attach Sheet
                           </button>
                         )}
+                      </td>
+
+                      {/* USER FEEDBACK REFINEMENT 1: Column named "Status" directly after Account Details Sheet with dropdown options: Completed, On Hold, Issue */}
+                      <td className="py-3 px-4">
+                        <select
+                          value={currentStatus === 'Completed' || currentStatus === 'On Hold' || currentStatus === 'Issue' ? currentStatus : 'Completed'}
+                          onChange={(e) => handleOnboardingStatusChange(r, e.target.value)}
+                          className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer"
+                        >
+                          <option value="Completed">Completed</option>
+                          <option value="On Hold">On Hold</option>
+                          <option value="Issue">Issue</option>
+                        </select>
                       </td>
 
                       <td className="py-3 px-4 text-slate-300">
@@ -305,32 +342,34 @@ export default function MstDashboard() {
                         )}
                       </td>
 
+                      {/* USER REFINEMENT 2: Final Actions Column with Dropdown Options:
+                          1. Orientation Completed
+                          2. Orientation Scheduled
+                          3. Orientation Switch */}
                       <td className="py-3 px-4 text-right">
-                        {isCompleted ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
-                            <CheckCheck className="w-3.5 h-3.5" /> Orientation Completed
-                          </span>
-                        ) : (
-                          <div className="flex items-center justify-end gap-2">
-                            {r.status === 'Pending' && (
-                              <button
-                                onClick={() => setActioningRequest(r)}
-                                className="px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold flex items-center gap-1 shadow-md shadow-cyan-600/30"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Action Onboarding
-                              </button>
-                            )}
+                        <div className="flex items-center justify-end gap-2">
+                          <select
+                            value={
+                              r.status === 'Orientation Completed' ? 'Orientation Completed' :
+                              r.status === 'Orientation Switch' || r.status === 'Timing Switch' ? 'Orientation Switch' :
+                              'Orientation Scheduled'
+                            }
+                            onChange={(e) => handleOrientationActionChange(r, e.target.value)}
+                            className="px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-500/40 text-indigo-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md"
+                          >
+                            <option value="Orientation Scheduled">1. Orientation Scheduled</option>
+                            <option value="Orientation Completed">2. Orientation Completed</option>
+                            <option value="Orientation Switch">3. Orientation Switch</option>
+                          </select>
 
-                            {r.status !== 'Pending' && (
-                              <button
-                                onClick={() => setAssigningRequest(r)}
-                                className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1 shadow-md shadow-indigo-600/30"
-                              >
-                                <UserCheck className="w-3.5 h-3.5" /> Review / Assign MST
-                              </button>
-                            )}
-                          </div>
-                        )}
+                          <button
+                            onClick={() => setAssigningRequest(r)}
+                            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors"
+                            title="Assign MST Handlers & Detailed Review"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

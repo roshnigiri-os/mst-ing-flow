@@ -5,18 +5,18 @@ import {
   Calendar, 
   CheckCheck, 
   PauseCircle, 
-  AlertTriangle 
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 
 export default function StatusBadge({ status }) {
   const getBadgeConfig = (statusKey) => {
     switch (statusKey) {
-      case 'Done':
       case 'Completed':
-      case 'Approved':
+      case 'Done':
       case 'Onboarding Completed':
         return {
-          label: 'Done',
+          label: 'Completed',
           className: 'badge-completed bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
           icon: CheckCircle2
         };
@@ -27,11 +27,30 @@ export default function StatusBadge({ status }) {
           icon: PauseCircle
         };
       case 'Issue':
-      case 'Timing Switch':
         return {
           label: 'Issue',
           className: 'badge-timing-switch bg-amber-500/20 text-amber-300 border border-amber-500/40',
           icon: AlertTriangle
+        };
+      case 'Orientation Completed':
+        return {
+          label: 'Orientation Completed',
+          className: 'badge-completed bg-green-500/20 text-green-300 border border-green-500/40',
+          icon: CheckCheck
+        };
+      case 'Orientation Scheduled':
+      case 'Approved':
+        return {
+          label: 'Orientation Scheduled',
+          className: 'badge-approved bg-violet-500/20 text-violet-300 border border-violet-500/40',
+          icon: Calendar
+        };
+      case 'Orientation Switch':
+      case 'Timing Switch':
+        return {
+          label: 'Orientation Switch',
+          className: 'badge-timing-switch bg-orange-500/20 text-orange-300 border border-orange-500/40',
+          icon: RefreshCw
         };
       case 'Pending':
       default:
