@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { X, Upload, FileSpreadsheet, CheckCircle2, Link as LinkIcon, FileText } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, CheckCircle2, Link as LinkIcon } from 'lucide-react';
 
 export default function UploadSheetModal({ onClose }) {
   const { createOnboardingRequest } = useApp();
   const { currentUser } = useAuth();
 
-  const [submissionMode, setSubmissionMode] = useState('file'); // 'file' or 'link'
+  const [submissionMode, setSubmissionMode] = useState('file');
   const [program, setProgram] = useState('Computer Science Fall 2026 Batch');
   const [notes, setNotes] = useState('');
   
@@ -42,15 +42,15 @@ export default function UploadSheetModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-lg glass-card rounded-2xl border border-slate-700/80 shadow-2xl p-6 text-slate-100 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="w-full max-w-lg glass-card rounded-2xl border border-slate-700/80 shadow-2xl p-4 sm:p-6 text-slate-100 max-h-[85vh] flex flex-col my-auto">
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-700/60">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-700/60 shrink-0">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-indigo-400" />
+            <FileSpreadsheet className="w-5 h-5 text-indigo-400 shrink-0" />
             <div>
-              <h2 className="text-lg font-bold text-slate-100">Upload Onboarding Request Sheet</h2>
-              <p className="text-xs text-slate-400">Step 1: Submit college student roster via file upload or Cloud Sheet link</p>
+              <h2 className="text-base sm:text-lg font-bold text-slate-100 leading-tight">Upload Onboarding Request Sheet</h2>
+              <p className="text-[11px] sm:text-xs text-slate-400">Step 1: Submit college student roster via file upload or Cloud Sheet link</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-slate-100">
@@ -58,7 +58,7 @@ export default function UploadSheetModal({ onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-4 pt-4 pr-1">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 pt-3 pr-1">
           {/* Program & College Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -83,61 +83,59 @@ export default function UploadSheetModal({ onClose }) {
             </div>
           </div>
 
-          {/* Submission Mode Selector (Upload File vs Add Sheet Link) */}
+          {/* Submission Mode Selector */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">Roster Submission Method</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setSubmissionMode('file')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                   submissionMode === 'file'
                     ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
                     : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <Upload className="w-4 h-4" /> Upload File (.csv, .xlsx)
+                <Upload className="w-3.5 h-3.5" /> Upload File
               </button>
 
               <button
                 type="button"
                 onClick={() => setSubmissionMode('link')}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                   submissionMode === 'link'
                     ? 'bg-emerald-600 border-emerald-500 text-white shadow-md'
                     : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <LinkIcon className="w-4 h-4" /> Add Cloud Sheet Link
+                <LinkIcon className="w-3.5 h-3.5" /> Cloud Sheet Link
               </button>
             </div>
           </div>
 
-          {/* Option A: File Upload Container */}
           {submissionMode === 'file' ? (
             <div className="space-y-2 animate-fade-in">
               <label className="block text-xs font-medium text-slate-300">Upload Student CSV/Excel Roster File</label>
-              <label className="block border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-2xl p-6 text-center transition-all cursor-pointer shadow-sm group">
+              <label className="block border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-2xl p-4 sm:p-6 text-center transition-all cursor-pointer shadow-sm group">
                 <input
                   type="file"
                   accept=".csv,.xlsx,.xls,.pdf,.zip"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center mx-auto mb-3 transition-all shadow-md">
-                  <Upload className="w-6 h-6 animate-bounce" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center mx-auto mb-2 transition-all shadow-md">
+                  <Upload className="w-5 h-5 sm:w-6 sm:h-6 animate-bounce" />
                 </div>
                 <p className="text-xs font-bold text-slate-100 group-hover:text-indigo-300 transition-colors">
-                  {fileName ? `Selected File: ${fileName} (${fileSize})` : 'Click here to select & upload student roster sheet'}
+                  {fileName ? `Selected: ${fileName} (${fileSize})` : 'Click here to select & upload student roster sheet'}
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">Click anywhere in this box to browse CSV or XLSX files (Max 10MB)</p>
-                <span className="inline-block mt-3 px-3 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-bold shadow-md group-hover:bg-indigo-500 transition-colors">
+                <p className="text-[11px] text-slate-400 mt-1">Browse CSV or XLSX files (Max 10MB)</p>
+                <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-bold shadow-md group-hover:bg-indigo-500 transition-colors">
                   Browse Files
                 </span>
               </label>
             </div>
           ) : (
-            /* Option B: Add Sheet Link */
             <div className="space-y-2 animate-fade-in">
               <label className="block text-xs font-medium text-slate-300">Add Cloud Sheet Link (Google Sheets / OneDrive)</label>
               <div className="relative">
@@ -148,14 +146,13 @@ export default function UploadSheetModal({ onClose }) {
                   value={sheetLink}
                   onChange={(e) => setSheetLink(e.target.value)}
                   placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full pl-10 pr-4 py-2 sm:py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                 />
               </div>
-              <p className="text-[11px] text-slate-400">Paste your Google Sheets, Excel Online, or shared cloud drive URL for MST verification.</p>
+              <p className="text-[11px] text-slate-400">Paste your Google Sheets or cloud drive URL for MST verification.</p>
             </div>
           )}
 
-          {/* Notes */}
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">Additional Notes for MST</label>
             <textarea
@@ -168,17 +165,17 @@ export default function UploadSheetModal({ onClose }) {
           </div>
 
           {/* Submit */}
-          <div className="pt-3 border-t border-slate-700/60 flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-slate-700/60 flex items-center justify-end gap-2 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/30"
+              className="px-4 py-1.5 sm:px-5 sm:py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shadow-indigo-600/30"
             >
               <CheckCircle2 className="w-4 h-4" /> Submit Sheet to MST
             </button>
