@@ -150,8 +150,8 @@ export default function MstDashboard() {
         />
       </div>
 
-      {/* Requests Queue Table */}
-      <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4 overflow-hidden">
+      {/* Requests Queue Table (Pinned High-Contrast Scrollbar & Viewport Fit Layout) */}
+      <div className="glass-card rounded-2xl p-6 border border-slate-700/60 space-y-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
           {/* Workflow Stage Tabs */}
           <div className="flex flex-wrap items-center gap-2">
@@ -213,23 +213,23 @@ export default function MstDashboard() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
+        {/* Table Container with Pinned High-Contrast Scrollbar */}
+        <div className="custom-scrollbar max-h-[60vh] overflow-x-auto overflow-y-auto rounded-xl border border-slate-800">
           <table className="w-full text-xs border-collapse">
-            <thead className="bg-slate-900/90 text-slate-300 font-bold border-b border-slate-700/60">
+            <thead className="bg-slate-900/95 text-slate-300 font-bold border-b border-slate-700/60 sticky top-0 z-10">
               <tr>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Request ID</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">College Name</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Program</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Onboarding Sheet (ING)</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Account Details Sheet</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Status</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Requested Orientation Date</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Assigned Handlers</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Actions & Details</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Request ID</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">College Name</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Program</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Onboarding Sheet (ING)</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Account Details Sheet</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Status</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Requested Date</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Assigned Handlers</th>
+                <th className="py-2.5 px-3 text-center align-middle whitespace-nowrap">Actions & Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-800/60 bg-slate-950/40">
               {filteredRequests.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="text-center py-8 text-slate-400 align-middle">
@@ -246,28 +246,28 @@ export default function MstDashboard() {
 
                   return (
                     <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-3.5 text-center align-middle font-mono font-bold text-indigo-300 whitespace-nowrap">{r.id}</td>
-                      <td className="py-3 px-3.5 text-center align-middle font-semibold text-slate-200">{r.collegeName}</td>
-                      <td className="py-3 px-3.5 text-center align-middle text-slate-200 font-medium">{r.program}</td>
+                      <td className="py-2.5 px-3 text-center align-middle font-mono font-bold text-indigo-300 whitespace-nowrap">{r.id}</td>
+                      <td className="py-2.5 px-3 text-center align-middle font-semibold text-slate-200">{r.collegeName}</td>
+                      <td className="py-2.5 px-3 text-center align-middle text-slate-200 font-medium">{r.program}</td>
 
                       {/* Onboarding Sheet (ING) File or Cloud Link */}
-                      <td className="py-3 px-3.5 text-center align-middle">
+                      <td className="py-2.5 px-3 text-center align-middle">
                         <div className="flex justify-center">
                           {r.sheetLink ? (
                             <a
                               href={r.sheetLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[150px]"
+                              className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1 truncate max-w-[140px]"
                               title={`Open Cloud Sheet: ${r.sheetLink}`}
                             >
                               <ExternalLink className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                              <span className="truncate">Open Cloud Sheet</span>
+                              <span className="truncate">Open Sheet</span>
                             </a>
                           ) : (
                             <button
                               onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.xlsx', r.id, false, null, r.fileDataUrl)}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
+                              className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1 truncate max-w-[140px]"
                               title={`Download ${r.fileName || 'roster_sheet.xlsx'}`}
                             >
                               <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
@@ -279,13 +279,13 @@ export default function MstDashboard() {
                       </td>
 
                       {/* Account Details Sheet Column */}
-                      <td className="py-3 px-3.5 text-center align-middle">
+                      <td className="py-2.5 px-3 text-center align-middle">
                         <div className="flex justify-center">
                           {r.accountSheet ? (
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink, r.accountSheet.fileDataUrl)}
-                                className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
+                                className="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1 truncate max-w-[140px]"
                                 title={`Download ${r.accountSheet.fileName}`}
                               >
                                 <FileSpreadsheet className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
@@ -303,7 +303,7 @@ export default function MstDashboard() {
                           ) : (
                             <button
                               onClick={() => setAttachingRequest(r)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-all"
+                              className="px-2 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 text-[11px] font-semibold flex items-center gap-1 transition-all"
                             >
                               <Plus className="w-3.5 h-3.5 text-indigo-400" /> Attach Sheet
                             </button>
@@ -312,12 +312,12 @@ export default function MstDashboard() {
                       </td>
 
                       {/* MID-TABLE STATUS DROPDOWN */}
-                      <td className="py-3 px-3.5 text-center align-middle">
+                      <td className="py-2.5 px-3 text-center align-middle">
                         <div className="flex justify-center">
                           <select
                             value={currentOnboardingStatus}
                             onChange={(e) => handleOnboardingStatusChange(r, e.target.value)}
-                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
+                            className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
                               isStatusCompleted
                                 ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 font-extrabold shadow-emerald-600/20'
                                 : currentOnboardingStatus === 'Ongoing'
@@ -335,18 +335,18 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      <td className="py-3 px-3.5 text-center align-middle text-slate-300">
+                      <td className="py-2.5 px-3 text-center align-middle text-slate-300">
                         {r.preferredDate ? (
                           <div>
                             <span className="font-semibold text-indigo-300">{r.preferredDate}</span>
                             <div className="text-[10px] text-slate-400">{r.preferredTime}</div>
                           </div>
                         ) : (
-                          <span className="text-slate-500 italic">None requested</span>
+                          <span className="text-slate-500 italic">None</span>
                         )}
                       </td>
 
-                      <td className="py-3 px-3.5 text-center align-middle">
+                      <td className="py-2.5 px-3 text-center align-middle">
                         <div className="flex justify-center">
                           {r.assignedMstMembers && r.assignedMstMembers.length > 0 ? (
                             <div className="flex items-center gap-1">
@@ -358,7 +358,7 @@ export default function MstDashboard() {
                                     src={found ? found.avatar : 'https://api.dicebear.com/7.x/avataaars/svg?seed=MST'}
                                     alt={found ? found.name : 'MST'}
                                     title={found ? `${found.name} (${found.mstRole})` : 'MST Handler'}
-                                    className="w-6 h-6 rounded-full object-cover border border-indigo-500/50"
+                                    className="w-5 h-5 rounded-full object-cover border border-indigo-500/50"
                                   />
                                 );
                               })}
@@ -370,12 +370,12 @@ export default function MstDashboard() {
                       </td>
 
                       {/* FINAL ACTIONS DROPDOWN + ALL DETAILS BUTTON */}
-                      <td className="py-3 px-3.5 text-center align-middle">
-                        <div className="flex items-center justify-center gap-1.5">
+                      <td className="py-2.5 px-3 text-center align-middle">
+                        <div className="flex items-center justify-center gap-1">
                           <select
                             value={currentOrientationStatus}
                             onChange={(e) => handleOrientationActionChange(r, e.target.value)}
-                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
+                            className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer shadow-md transition-all ${
                               isActionCompleted
                                 ? 'bg-green-600/30 border-green-500 text-green-200 font-extrabold shadow-green-600/20'
                                 : currentOrientationStatus === 'Orientation Scheduled'
@@ -393,16 +393,16 @@ export default function MstDashboard() {
 
                           <button
                             onClick={() => setAssigningRequest(r)}
-                            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors"
+                            className="p-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-colors"
                             title="Assign MST Handlers & Detailed Review"
                           >
                             <UserCheck className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* ALL DETAILS BUTTON AT LAST OF ROW */}
+                          {/* ALL DETAILS BUTTON */}
                           <button
                             onClick={() => setViewingDetailsRequest(r)}
-                            className="px-2.5 py-1 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                            className="px-2 py-1 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition-all shrink-0"
                             title="View all details of this request"
                           >
                             <Eye className="w-3.5 h-3.5 text-indigo-400" /> Details
