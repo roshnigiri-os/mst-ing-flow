@@ -61,12 +61,27 @@ export default function IngDashboard() {
       window.open(accountSheet.sheetLink, '_blank');
       return;
     }
-    const content = `ACCOUNT DETAILS SHEET FOR ${reqId}\nFilename: ${accountSheet.fileName}\nUploaded By: ${accountSheet.uploadedBy || 'MST'}\nDate: ${accountSheet.uploadedAt || new Date().toISOString()}\nStatus: Verified`;
-    const blob = new Blob([content], { type: 'text/plain' });
+    if (accountSheet.fileDataUrl) {
+      const a = document.createElement('a');
+      a.href = accountSheet.fileDataUrl;
+      a.download = accountSheet.fileName || 'account_sheet';
+      a.click();
+      return;
+    }
+
+    const header = `Request ID,College,Program,Type,Date\n`;
+    const row = `"${reqId}","${currentUser?.collegeName || 'College'}","Student Onboarding","Account Details Sheet","${new Date().toLocaleDateString()}"\n`;
+    const blob = new Blob([header + row], { type: 'text/csv;charset=utf-8;' });
+    
+    let cleanFileName = accountSheet.fileName || `${reqId}_account_sheet.csv`;
+    if (cleanFileName.endsWith('.xlsx')) {
+      cleanFileName = cleanFileName.replace('.xlsx', '.csv');
+    }
+
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = accountSheet.fileName;
+    a.download = cleanFileName;
     a.click();
     window.URL.revokeObjectURL(url);
   };

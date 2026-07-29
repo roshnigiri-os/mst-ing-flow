@@ -9,7 +9,6 @@ export function AppProvider({ children }) {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Ensure onboardingStatus and orientationStatus fields exist on all loaded requests
         return parsed.map(r => ({
           ...r,
           onboardingStatus: r.onboardingStatus || (r.status === 'Completed' || r.status === 'Done' ? 'Completed' : (r.status === 'On Hold' ? 'On Hold' : (r.status === 'Issue' ? 'Issue' : 'Ongoing'))),
@@ -111,14 +110,15 @@ export function AppProvider({ children }) {
       submitterEmail: currentUser.email,
       program: requestData.program,
       studentCount: requestData.studentCount || 45,
-      fileName: requestData.fileName || (requestData.sheetLink ? 'Google_Sheets_Cloud_Roster' : 'student_roster.csv'),
+      fileName: requestData.fileName || (requestData.sheetLink ? 'Google_Sheets_Cloud_Roster' : 'student_roster.xlsx'),
       fileSize: requestData.fileSize || 'Cloud Link',
+      fileDataUrl: requestData.fileDataUrl || null,
       sheetLink: requestData.sheetLink || null,
       submissionType: requestData.sheetLink ? 'link' : 'file',
       createdAt: new Date().toISOString(),
       status: 'Ongoing',
-      onboardingStatus: 'Ongoing', // Independent Default
-      orientationStatus: 'Orientation Pending', // Independent Default
+      onboardingStatus: 'Ongoing',
+      orientationStatus: 'Orientation Pending',
       preferredDate: null,
       preferredTime: null,
       assignedMstMembers: [],
@@ -158,7 +158,6 @@ export function AppProvider({ children }) {
     }
   };
 
-  // INDEPENDENT UPDATE FUNCTION 1: Update Onboarding Status solely (mid-table)
   const updateOnboardingStatus = (requestId, newStatus, user) => {
     let targetReq = null;
 
@@ -167,7 +166,7 @@ export function AppProvider({ children }) {
         targetReq = {
           ...req,
           onboardingStatus: newStatus,
-          status: newStatus // Sync root status for fallback
+          status: newStatus
         };
         return targetReq;
       }
@@ -186,7 +185,6 @@ export function AppProvider({ children }) {
     }
   };
 
-  // INDEPENDENT UPDATE FUNCTION 2: Update Orientation Status solely (end-table)
   const updateOrientationStatus = (requestId, newAction, user, comment = null) => {
     let targetReq = null;
 
@@ -228,6 +226,7 @@ export function AppProvider({ children }) {
           accountSheet: {
             fileName: fileData.fileName,
             fileSize: fileData.fileSize || '32.0 KB',
+            fileDataUrl: fileData.fileDataUrl || null,
             uploadedAt: new Date().toISOString(),
             uploadedBy: mstUser.name,
             sheetLink: fileData.sheetLink || null

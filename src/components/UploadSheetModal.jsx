@@ -14,6 +14,7 @@ export default function UploadSheetModal({ onClose }) {
   // File mode
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState('');
+  const [fileDataUrl, setFileDataUrl] = useState(null);
 
   // Link mode
   const [sheetLink, setSheetLink] = useState('');
@@ -23,6 +24,13 @@ export default function UploadSheetModal({ onClose }) {
     if (file) {
       setFileName(file.name);
       setFileSize(`${(file.size / 1024).toFixed(1)} KB`);
+
+      // Read real binary Data URL to prevent Excel/Word corruption on download
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFileDataUrl(event.target.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -33,8 +41,9 @@ export default function UploadSheetModal({ onClose }) {
       program,
       studentCount: 45,
       notes,
-      fileName: submissionMode === 'file' ? (fileName || 'uploaded_roster.csv') : (sheetLink || 'Google_Sheets_Cloud_Roster'),
+      fileName: submissionMode === 'file' ? (fileName || 'uploaded_roster.xlsx') : (sheetLink || 'Google_Sheets_Cloud_Roster'),
       fileSize: submissionMode === 'file' ? (fileSize || '18.5 KB') : 'Cloud Link',
+      fileDataUrl: submissionMode === 'file' ? fileDataUrl : null,
       sheetLink: submissionMode === 'link' ? sheetLink : null
     }, currentUser);
 
@@ -96,7 +105,7 @@ export default function UploadSheetModal({ onClose }) {
                     : 'bg-slate-900/40 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <Upload className="w-3.5 h-3.5" /> Upload File
+                <Upload className="w-3.5 h-3.5" /> Upload File (.xlsx, .doc, .pdf)
               </button>
 
               <button
@@ -115,11 +124,11 @@ export default function UploadSheetModal({ onClose }) {
 
           {submissionMode === 'file' ? (
             <div className="space-y-2 animate-fade-in">
-              <label className="block text-xs font-medium text-slate-300">Upload Student CSV/Excel Roster File</label>
+              <label className="block text-xs font-medium text-slate-300">Upload Student Roster Document (All file types accepted)</label>
               <label className="block border-2 border-dashed border-indigo-500/40 hover:border-indigo-400 bg-indigo-950/20 hover:bg-indigo-950/40 rounded-2xl p-4 sm:p-6 text-center transition-all cursor-pointer shadow-sm group">
                 <input
                   type="file"
-                  accept=".csv,.xlsx,.xls,.pdf,.zip"
+                  accept="*"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
@@ -127,9 +136,9 @@ export default function UploadSheetModal({ onClose }) {
                   <Upload className="w-5 h-5 sm:w-6 sm:h-6 animate-bounce" />
                 </div>
                 <p className="text-xs font-bold text-slate-100 group-hover:text-indigo-300 transition-colors">
-                  {fileName ? `Selected: ${fileName} (${fileSize})` : 'Click here to select & upload student roster sheet'}
+                  {fileName ? `Selected: ${fileName} (${fileSize})` : 'Click here to select & upload roster document'}
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1">Browse CSV or XLSX files (Max 10MB)</p>
+                <p className="text-[11px] text-slate-400 mt-1">Accepts .xlsx, .xls, .csv, .docx, .doc, .pdf, .zip, and all files</p>
                 <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-bold shadow-md group-hover:bg-indigo-500 transition-colors">
                   Browse Files
                 </span>

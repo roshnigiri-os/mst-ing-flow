@@ -68,18 +68,37 @@ export default function MstDashboard() {
     return true;
   });
 
-  const handleDownloadSheet = (fileName, reqId, isAccountSheet = false, sheetUrl = null) => {
+  // CLEAN BINARY & EXCEL DOWNLOAD HANDLER (Prevents Excel "File format or extension not valid" warning)
+  const handleDownloadSheet = (fileName, reqId, isAccountSheet = false, sheetUrl = null, fileDataUrl = null) => {
     if (sheetUrl) {
       window.open(sheetUrl, '_blank');
       return;
     }
-    const title = isAccountSheet ? `ACCOUNT DETAILS SHEET` : `STUDENT ROSTER SHEET`;
-    const content = `${title} FOR ${reqId}\nFilename: ${fileName}\nStatus: Verified\nDate: ${new Date().toISOString()}`;
-    const blob = new Blob([content], { type: 'text/plain' });
+
+    if (fileDataUrl) {
+      // Direct binary download for authentic uploaded user files
+      const a = document.createElement('a');
+      a.href = fileDataUrl;
+      a.download = fileName || 'document';
+      a.click();
+      return;
+    }
+
+    // For demo/generated sheets, generate valid CSV data compatible with Excel
+    const header = `Request ID,College,Program,Type,Date\n`;
+    const row = `"${reqId}","Partner College","Student Onboarding","${isAccountSheet ? 'Account Details' : 'Roster Sheet'}","${new Date().toLocaleDateString()}"\n`;
+    const blob = new Blob([header + row], { type: 'text/csv;charset=utf-8;' });
+    
+    // Ensure clean extension for demo files to avoid Excel format warning
+    let cleanFileName = fileName || `${reqId}_sheet.csv`;
+    if (cleanFileName.endsWith('.xlsx')) {
+      cleanFileName = cleanFileName.replace('.xlsx', '.csv');
+    }
+
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = fileName;
+    a.download = cleanFileName;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -211,7 +230,7 @@ export default function MstDashboard() {
           </div>
         </div>
 
-        {/* Table with Decoupled Independent Status & Actions Columns */}
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead className="bg-slate-900/90 text-slate-300 font-bold border-b border-slate-700/60">
@@ -236,10 +255,7 @@ export default function MstDashboard() {
                 </tr>
               ) : (
                 filteredRequests.map(r => {
-                  // Independent Field 1: Onboarding Status (Default: Ongoing)
                   const currentOnboardingStatus = r.onboardingStatus || 'Ongoing';
-                  
-                  // Independent Field 2: Orientation Status (Default: Orientation Pending)
                   const currentOrientationStatus = r.orientationStatus || 'Orientation Pending';
 
                   const isStatusCompleted = currentOnboardingStatus === 'Completed';
@@ -267,7 +283,7 @@ export default function MstDashboard() {
                             </a>
                           ) : (
                             <button
-                              onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false, null)}
+                              onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false, null, r.fileDataUrl)}
                               className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
                               title={`Download ${r.fileName || 'roster_sheet.csv'}`}
                             >
@@ -285,7 +301,7 @@ export default function MstDashboard() {
                           {r.accountSheet ? (
                             <div className="flex items-center gap-1.5">
                               <button
-                                onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink)}
+                                onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink, r.accountSheet.fileDataUrl)}
                                 className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
                                 title={`Download ${r.accountSheet.fileName}`}
                               >
@@ -312,7 +328,7 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* INDEPENDENT COLUMN 1: MID-TABLE STATUS DROPDOWN */}
+                      {/* MID-TABLE STATUS DROPDOWN */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex justify-center">
                           <select
@@ -370,7 +386,7 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* INDEPENDENT COLUMN 2: FINAL ACTIONS DROPDOWN */}
+                      {/* FINAL ACTIONS DROPDOWN */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex items-center justify-center gap-1.5">
                           <select
