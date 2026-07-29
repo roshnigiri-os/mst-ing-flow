@@ -7,6 +7,7 @@ import StatusBadge from '../components/StatusBadge';
 import UploadSheetModal from '../components/UploadSheetModal';
 import ScheduleDateModal from '../components/ScheduleDateModal';
 import EditRequestModal from '../components/EditRequestModal';
+import RequestDetailsModal from '../components/RequestDetailsModal';
 import { 
   School, 
   Plus, 
@@ -18,7 +19,8 @@ import {
   Download,
   ExternalLink,
   Edit3,
-  FileText
+  FileText,
+  Eye
 } from 'lucide-react';
 
 export default function IngDashboard() {
@@ -28,6 +30,7 @@ export default function IngDashboard() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [schedulingRequest, setSchedulingRequest] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [viewingDetailsRequest, setViewingDetailsRequest] = useState(null);
 
   // Handle notification redirection
   useEffect(() => {
@@ -63,7 +66,6 @@ export default function IngDashboard() {
       return;
     }
     
-    // Use authentic uploaded binary fileDataUrl or fallback to valid binary Excel Data URL
     const targetDataUrl = accountSheet.fileDataUrl || MOCK_EXCEL_DATA_URL;
     const a = document.createElement('a');
     a.href = targetDataUrl;
@@ -151,7 +153,7 @@ export default function IngDashboard() {
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Account Details Sheet</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Orientation Date & Time</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Assigned MST Team</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Actions</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Actions & Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -251,12 +253,12 @@ export default function IngDashboard() {
                       </div>
                     </td>
 
-                    {/* Editable Request Pipeline Row Actions */}
+                    {/* Editable Request Pipeline Row Actions + Details Button */}
                     <td className="py-3 px-3.5 text-center align-middle">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => setEditingRequest(r)}
-                          className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          className="px-2 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
                           title="Edit request program details or sheet"
                         >
                           <Edit3 className="w-3.5 h-3.5 text-indigo-400" /> Edit
@@ -264,10 +266,19 @@ export default function IngDashboard() {
 
                         <button
                           onClick={() => setSchedulingRequest(r)}
-                          className="px-2.5 py-1 rounded-lg bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 border border-violet-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          className="px-2 py-1 rounded-lg bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 border border-violet-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
                           title="Schedule orientation date"
                         >
                           <Calendar className="w-3.5 h-3.5 text-violet-400" /> Schedule
+                        </button>
+
+                        {/* ALL DETAILS BUTTON */}
+                        <button
+                          onClick={() => setViewingDetailsRequest(r)}
+                          className="px-2 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          title="View all details of this request"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-emerald-400" /> Details
                         </button>
                       </div>
                     </td>
@@ -295,6 +306,13 @@ export default function IngDashboard() {
         <EditRequestModal
           request={editingRequest}
           onClose={() => setEditingRequest(null)}
+        />
+      )}
+
+      {viewingDetailsRequest && (
+        <RequestDetailsModal
+          request={viewingDetailsRequest}
+          onClose={() => setViewingDetailsRequest(null)}
         />
       )}
     </div>

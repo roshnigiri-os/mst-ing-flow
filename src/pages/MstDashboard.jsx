@@ -6,6 +6,7 @@ import StatCard from '../components/StatCard';
 import AssignMSTModal from '../components/AssignMSTModal';
 import AttachDocumentModal from '../components/AttachDocumentModal';
 import ActionOnboardingModal from '../components/ActionOnboardingModal';
+import RequestDetailsModal from '../components/RequestDetailsModal';
 import { 
   Users, 
   Clock, 
@@ -19,7 +20,7 @@ import {
   Plus,
   FileText,
   ExternalLink,
-  MessageSquareText
+  Eye
 } from 'lucide-react';
 
 export default function MstDashboard() {
@@ -37,6 +38,7 @@ export default function MstDashboard() {
   const [assigningRequest, setAssigningRequest] = useState(null);
   const [attachingRequest, setAttachingRequest] = useState(null);
   const [actioningRequest, setActioningRequest] = useState(null);
+  const [viewingDetailsRequest, setViewingDetailsRequest] = useState(null);
 
   // Handle notification redirection
   useEffect(() => {
@@ -77,7 +79,6 @@ export default function MstDashboard() {
       return;
     }
 
-    // Stream authentic uploaded binary fileDataUrl or fallback to valid binary Excel Data URL
     const targetDataUrl = fileDataUrl || MOCK_EXCEL_DATA_URL;
     const a = document.createElement('a');
     a.href = targetDataUrl;
@@ -222,17 +223,16 @@ export default function MstDashboard() {
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Program</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Onboarding Sheet (ING)</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Account Details Sheet</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Additional Notes for MST</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Status</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Requested Orientation Date</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Assigned Handlers</th>
-                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Actions</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Actions & Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="text-center py-8 text-slate-400 align-middle">
+                  <td colSpan="9" className="text-center py-8 text-slate-400 align-middle">
                     No requests match the selected tab filter.
                   </td>
                 </tr>
@@ -311,23 +311,6 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* DEDICATED COLUMN: Additional Notes for MST Provided by ING Member */}
-                      <td className="py-3 px-3.5 text-center align-middle">
-                        <div className="flex justify-center">
-                          {r.notes ? (
-                            <div
-                              className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] font-medium flex items-center gap-1.5 max-w-[200px] cursor-help"
-                              title={`Additional Notes from ${r.collegeName}:\n${r.notes}`}
-                            >
-                              <MessageSquareText className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                              <span className="truncate">{r.notes}</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-500 italic text-[11px]">No notes provided</span>
-                          )}
-                        </div>
-                      </td>
-
                       {/* MID-TABLE STATUS DROPDOWN */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex justify-center">
@@ -386,7 +369,7 @@ export default function MstDashboard() {
                         </div>
                       </td>
 
-                      {/* FINAL ACTIONS DROPDOWN */}
+                      {/* FINAL ACTIONS DROPDOWN + ALL DETAILS BUTTON */}
                       <td className="py-3 px-3.5 text-center align-middle">
                         <div className="flex items-center justify-center gap-1.5">
                           <select
@@ -414,6 +397,15 @@ export default function MstDashboard() {
                             title="Assign MST Handlers & Detailed Review"
                           >
                             <UserCheck className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* ALL DETAILS BUTTON AT LAST OF ROW */}
+                          <button
+                            onClick={() => setViewingDetailsRequest(r)}
+                            className="px-2.5 py-1 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                            title="View all details of this request"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-indigo-400" /> Details
                           </button>
                         </div>
                       </td>
@@ -445,6 +437,13 @@ export default function MstDashboard() {
         <ActionOnboardingModal
           request={actioningRequest}
           onClose={() => setActioningRequest(null)}
+        />
+      )}
+
+      {viewingDetailsRequest && (
+        <RequestDetailsModal
+          request={viewingDetailsRequest}
+          onClose={() => setViewingDetailsRequest(null)}
         />
       )}
     </div>
