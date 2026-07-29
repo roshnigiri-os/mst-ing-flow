@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import { MOCK_EXCEL_DATA_URL } from '../mock/initialData';
 import StatCard from '../components/StatCard';
 import AssignMSTModal from '../components/AssignMSTModal';
 import AttachDocumentModal from '../components/AttachDocumentModal';
@@ -17,7 +18,8 @@ import {
   Download,
   Plus,
   FileText,
-  ExternalLink
+  ExternalLink,
+  MessageSquareText
 } from 'lucide-react';
 
 export default function MstDashboard() {
@@ -68,39 +70,19 @@ export default function MstDashboard() {
     return true;
   });
 
-  // CLEAN BINARY & EXCEL DOWNLOAD HANDLER (Prevents Excel "File format or extension not valid" warning)
+  // CLEAN BINARY & EXCEL DOWNLOAD HANDLER FOR MST SPECIALIST
   const handleDownloadSheet = (fileName, reqId, isAccountSheet = false, sheetUrl = null, fileDataUrl = null) => {
     if (sheetUrl) {
       window.open(sheetUrl, '_blank');
       return;
     }
 
-    if (fileDataUrl) {
-      // Direct binary download for authentic uploaded user files
-      const a = document.createElement('a');
-      a.href = fileDataUrl;
-      a.download = fileName || 'document';
-      a.click();
-      return;
-    }
-
-    // For demo/generated sheets, generate valid CSV data compatible with Excel
-    const header = `Request ID,College,Program,Type,Date\n`;
-    const row = `"${reqId}","Partner College","Student Onboarding","${isAccountSheet ? 'Account Details' : 'Roster Sheet'}","${new Date().toLocaleDateString()}"\n`;
-    const blob = new Blob([header + row], { type: 'text/csv;charset=utf-8;' });
-    
-    // Ensure clean extension for demo files to avoid Excel format warning
-    let cleanFileName = fileName || `${reqId}_sheet.csv`;
-    if (cleanFileName.endsWith('.xlsx')) {
-      cleanFileName = cleanFileName.replace('.xlsx', '.csv');
-    }
-
-    const url = window.URL.createObjectURL(blob);
+    // Stream authentic uploaded binary fileDataUrl or fallback to valid binary Excel Data URL
+    const targetDataUrl = fileDataUrl || MOCK_EXCEL_DATA_URL;
     const a = document.createElement('a');
-    a.href = url;
-    a.download = cleanFileName;
+    a.href = targetDataUrl;
+    a.download = fileName || `${reqId}_${isAccountSheet ? 'account' : 'roster'}.xlsx`;
     a.click();
-    window.URL.revokeObjectURL(url);
   };
 
   // INDEPENDENT HANDLER 1: Updates ONLY mid-table onboardingStatus
@@ -240,6 +222,7 @@ export default function MstDashboard() {
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Program</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Onboarding Sheet (ING)</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Account Details Sheet</th>
+                <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Additional Notes for MST</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Status</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Requested Orientation Date</th>
                 <th className="py-3 px-3.5 text-center align-middle whitespace-nowrap">Assigned Handlers</th>
@@ -249,7 +232,7 @@ export default function MstDashboard() {
             <tbody className="divide-y divide-slate-800/60">
               {filteredRequests.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="text-center py-8 text-slate-400 align-middle">
+                  <td colSpan="10" className="text-center py-8 text-slate-400 align-middle">
                     No requests match the selected tab filter.
                   </td>
                 </tr>
@@ -283,12 +266,12 @@ export default function MstDashboard() {
                             </a>
                           ) : (
                             <button
-                              onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.csv', r.id, false, null, r.fileDataUrl)}
+                              onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.xlsx', r.id, false, null, r.fileDataUrl)}
                               className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1.5 truncate max-w-[150px]"
-                              title={`Download ${r.fileName || 'roster_sheet.csv'}`}
+                              title={`Download ${r.fileName || 'roster_sheet.xlsx'}`}
                             >
                               <FileText className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                              <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
+                              <span className="truncate">{r.fileName || 'roster_sheet.xlsx'}</span>
                               <Download className="w-3 h-3 shrink-0 ml-0.5" />
                             </button>
                           )}
@@ -324,6 +307,23 @@ export default function MstDashboard() {
                             >
                               <Plus className="w-3.5 h-3.5 text-indigo-400" /> Attach Sheet
                             </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* DEDICATED COLUMN: Additional Notes for MST Provided by ING Member */}
+                      <td className="py-3 px-3.5 text-center align-middle">
+                        <div className="flex justify-center">
+                          {r.notes ? (
+                            <div
+                              className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] font-medium flex items-center gap-1.5 max-w-[200px] cursor-help"
+                              title={`Additional Notes from ${r.collegeName}:\n${r.notes}`}
+                            >
+                              <MessageSquareText className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                              <span className="truncate">{r.notes}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-500 italic text-[11px]">No notes provided</span>
                           )}
                         </div>
                       </td>
