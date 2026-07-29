@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import { MOCK_EXCEL_DATA_URL } from '../mock/initialData';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import UploadSheetModal from '../components/UploadSheetModal';
@@ -61,29 +62,13 @@ export default function IngDashboard() {
       window.open(accountSheet.sheetLink, '_blank');
       return;
     }
-    if (accountSheet.fileDataUrl) {
-      const a = document.createElement('a');
-      a.href = accountSheet.fileDataUrl;
-      a.download = accountSheet.fileName || 'account_sheet';
-      a.click();
-      return;
-    }
-
-    const header = `Request ID,College,Program,Type,Date\n`;
-    const row = `"${reqId}","${currentUser?.collegeName || 'College'}","Student Onboarding","Account Details Sheet","${new Date().toLocaleDateString()}"\n`;
-    const blob = new Blob([header + row], { type: 'text/csv;charset=utf-8;' });
     
-    let cleanFileName = accountSheet.fileName || `${reqId}_account_sheet.csv`;
-    if (cleanFileName.endsWith('.xlsx')) {
-      cleanFileName = cleanFileName.replace('.xlsx', '.csv');
-    }
-
-    const url = window.URL.createObjectURL(blob);
+    // Use authentic uploaded binary fileDataUrl or fallback to valid binary Excel Data URL
+    const targetDataUrl = accountSheet.fileDataUrl || MOCK_EXCEL_DATA_URL;
     const a = document.createElement('a');
-    a.href = url;
-    a.download = cleanFileName;
+    a.href = targetDataUrl;
+    a.download = accountSheet.fileName || `${reqId}_account_sheet.xlsx`;
     a.click();
-    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -202,7 +187,7 @@ export default function IngDashboard() {
                         ) : (
                           <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-medium inline-flex items-center gap-1.5 truncate max-w-[170px]">
                             <FileText className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="truncate">{r.fileName || 'roster_sheet.csv'}</span>
+                            <span className="truncate">{r.fileName || 'roster_sheet.xlsx'}</span>
                           </span>
                         )}
                       </div>
