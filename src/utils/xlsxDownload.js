@@ -1,43 +1,91 @@
 /**
  * xlsxDownload.js
- * 
- * Utility to generate and trigger a valid .xlsx binary download using SheetJS.
- * 
- * - For pre-seeded mock requests (where no real fileDataUrl was captured from
- *   FileReader), this generates a proper OpenXML .xlsx workbook on-the-fly so
- *   Microsoft Excel opens it without "format or extension is not valid" errors.
- * 
- * - For user-uploaded files, the real binary Data URL from FileReader.readAsDataURL()
- *   is passed directly, so those always download cleanly as-is.
+ *
+ * Reliable file download utility for MST-ING Flow.
+ *
+ * Root cause of "Excel cannot open file" error:
+ *   Chrome/Edge impose a ~2 MB limit on data URL anchor downloads. When a base64
+ *   data URL is set directly on <a>.href and .click() is called, the browser may
+ *   silently truncate the payload, producing a corrupt file that Excel rejects.
+ *
+ * Fix for ALL file types (uploaded or mock):
+ *   1. Convert the base64 data URL → binary Uint8Array → Blob (preserving MIME type).
+ *   2. Create a short-lived Object URL with URL.createObjectURL(blob).
+ *   3. Trigger download via the Object URL, then revoke it after 3 s.
+ *
+ * For pre-seeded mock records that have no real file (fileDataUrl is null or the
+ * legacy placeholder), SheetJS generates a valid .xlsx workbook on-the-fly.
  */
 
 import * as XLSX from 'xlsx';
 
-/**
- * Sentinel value: the placeholder MOCK_EXCEL_DATA_URL exported from initialData.js.
- * When a file's stored fileDataUrl equals this (or is null/undefined), we know it
- * is a mock/pre-seeded entry and we should generate a real xlsx on-the-fly.
- */
-const MOCK_SENTINEL_PREFIX = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,UEsDBBQABgAIAAAAIQAY0D2H';
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
- * Returns true if the given dataUrl is the mock placeholder (not a real uploaded file binary).
+ * Convert a base64 Data URL to a Blob, preserving the MIME type embedded in
+ * the data URL. This avoids Chrome/Edge's ~2 MB anchor-href limit.
+ *
+ * @param {string} dataUrl  e.g. "data:application/vnd.openxmlformats-...;base64,AAAA…"
+ * @returns {Blob}
+ */
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)[1];
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
+/**
+ * Trigger a browser download for a Blob using a temporary Object URL.
+ *
+ * @param {Blob}   blob
+ * @param {string} fileName  Desired download filename
+ */
+function triggerBlobDownload(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName || 'document';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+// ─── Mock/pre-seeded detection ───────────────────────────────────────────────
+
+/**
+ * The legacy placeholder stored in initialData.js for pre-seeded mock requests.
+ * Any real user-uploaded file will have a different (longer) base64 payload.
+ */
+const MOCK_SENTINEL_PREFIX =
+  'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,UEsDBBQABgAIAAAAIQAY0D2H';
+
+/**
+ * Returns true when there is no real binary – i.e. the value is absent or is
+ * the legacy placeholder stub that Excel cannot open.
  */
 export function isMockDataUrl(dataUrl) {
   return !dataUrl || dataUrl.startsWith(MOCK_SENTINEL_PREFIX);
 }
 
+// ─── SheetJS mock generator ──────────────────────────────────────────────────
+
 /**
- * Generate a real, valid xlsx workbook using SheetJS and trigger a browser download.
+ * Generate a genuinely valid .xlsx workbook via SheetJS and download it.
+ * Used when no real uploaded binary is available.
  *
- * @param {string} fileName - The desired download filename (e.g. 'roster_sheet.xlsx')
- * @param {string} collegeName - College name to embed in the sheet header
- * @param {string} program - Program/cohort name for context
+ * @param {string} fileName
+ * @param {string} collegeName
+ * @param {string} program
  */
-function downloadMockXlsx(fileName, collegeName, program) {
+function downloadGeneratedXlsx(fileName, collegeName, program) {
   const wb = XLSX.utils.book_new();
 
-  // Build sample roster data rows
   const data = [
     ['Student Name', 'Student ID', 'Email', 'Program', 'College'],
     ['Sample Student 1', 'STU-001', 'student1@college.edu', program || 'Program', collegeName || 'College'],
@@ -46,60 +94,55 @@ function downloadMockXlsx(fileName, collegeName, program) {
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(data);
-
-  // Set column widths
   ws['!cols'] = [{ wch: 24 }, { wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 20 }];
-
   XLSX.utils.book_append_sheet(wb, ws, 'Roster');
 
-  // Write as array buffer and download
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([wbout], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName || 'roster_sheet.xlsx';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  // Ensure the file has a proper .xlsx extension
+  const safeName = (fileName || 'roster_sheet.xlsx').replace(/\.[^.]+$/, '') + '.xlsx';
+  triggerBlobDownload(blob, safeName);
 }
 
+// ─── Public API ──────────────────────────────────────────────────────────────
+
 /**
- * Main download handler.
- * 
- * - If fileDataUrl is a real binary (user-uploaded via FileReader), downloads it directly.
- * - If fileDataUrl is the mock placeholder or null, generates a proper xlsx via SheetJS.
- * - If sheetLink is provided, opens it in a new tab instead.
+ * Universal sheet download handler.
+ *
+ * Priority order:
+ *   1. Cloud link  → open in new tab
+ *   2. Real binary data URL  → convert to Blob via dataUrlToBlob, download via Object URL
+ *   3. No/mock data URL  → generate valid .xlsx with SheetJS, download via Object URL
  *
  * @param {object} opts
- * @param {string} opts.fileName - Desired download filename
- * @param {string} [opts.fileDataUrl] - Real binary Data URL from FileReader, or MOCK placeholder
- * @param {string} [opts.sheetLink] - Cloud sheet URL (Google Sheets / OneDrive)
- * @param {string} [opts.collegeName] - For generating mock sheet context
- * @param {string} [opts.program] - For generating mock sheet context
+ * @param {string}  opts.fileName      Desired filename for download
+ * @param {string} [opts.fileDataUrl]  Base64 data URL from FileReader (may be mock/null)
+ * @param {string} [opts.sheetLink]    Cloud URL (Google Sheets / OneDrive)
+ * @param {string} [opts.collegeName]  College name – used when generating mock xlsx
+ * @param {string} [opts.program]      Program name – used when generating mock xlsx
  */
 export function handleSheetDownload({ fileName, fileDataUrl, sheetLink, collegeName, program }) {
-  // Priority 1: cloud sheet link
+  // 1. Cloud link
   if (sheetLink) {
     window.open(sheetLink, '_blank');
     return;
   }
 
-  // Priority 2: real user-uploaded binary Data URL
+  // 2. Real user-uploaded binary → convert data URL to Blob, download via Object URL
   if (fileDataUrl && !isMockDataUrl(fileDataUrl)) {
-    const a = document.createElement('a');
-    a.href = fileDataUrl;
-    a.download = fileName || 'document';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      const blob = dataUrlToBlob(fileDataUrl);
+      triggerBlobDownload(blob, fileName || 'document');
+    } catch (err) {
+      console.error('[xlsxDownload] dataUrlToBlob failed, falling back to SheetJS:', err);
+      downloadGeneratedXlsx(fileName, collegeName, program);
+    }
     return;
   }
 
-  // Priority 3: mock placeholder → generate a real xlsx using SheetJS
-  downloadMockXlsx(fileName, collegeName, program);
+  // 3. No real binary (pre-seeded mock) → generate valid xlsx on-the-fly
+  downloadGeneratedXlsx(fileName, collegeName, program);
 }
