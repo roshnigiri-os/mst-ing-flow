@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { MOCK_EXCEL_DATA_URL } from '../mock/initialData';
+import { handleSheetDownload } from '../utils/xlsxDownload';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import UploadSheetModal from '../components/UploadSheetModal';
@@ -59,18 +59,15 @@ export default function IngDashboard() {
   const scheduledCount = myRequests.filter(r => r.preferredDate ? true : false).length;
   const actionRequiredCount = myRequests.filter(r => r.onboardingStatus === 'Issue' || r.onboardingStatus === 'On Hold' || r.orientationStatus === 'Orientation Switch').length;
 
-  const handleDownloadSheet = (accountSheet, reqId) => {
+  const handleDownloadSheet = (accountSheet, reqId, collegeName, program) => {
     if (!accountSheet) return;
-    if (accountSheet.sheetLink) {
-      window.open(accountSheet.sheetLink, '_blank');
-      return;
-    }
-    
-    const targetDataUrl = accountSheet.fileDataUrl || MOCK_EXCEL_DATA_URL;
-    const a = document.createElement('a');
-    a.href = targetDataUrl;
-    a.download = accountSheet.fileName || `${reqId}_account_sheet.xlsx`;
-    a.click();
+    handleSheetDownload({
+      fileName: accountSheet.fileName || `${reqId}_account_sheet.xlsx`,
+      fileDataUrl: accountSheet.fileDataUrl,
+      sheetLink: accountSheet.sheetLink,
+      collegeName,
+      program,
+    });
   };
 
   return (
@@ -188,10 +185,15 @@ export default function IngDashboard() {
                             <span className="truncate">Open Sheet</span>
                           </a>
                         ) : (
-                          <span className="px-2 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-medium inline-flex items-center gap-1 truncate max-w-[150px]">
-                            <FileText className="w-3.5 h-3.5 text-slate-400" />
+                          <button
+                            onClick={() => handleSheetDownload({ fileName: r.fileName || 'roster_sheet.xlsx', fileDataUrl: r.fileDataUrl, sheetLink: null, collegeName: r.collegeName, program: r.program })}
+                            className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium inline-flex items-center gap-1 truncate max-w-[150px]"
+                            title={`Download ${r.fileName || 'roster_sheet.xlsx'}`}
+                          >
+                            <FileText className="w-3.5 h-3.5 text-emerald-400" />
                             <span className="truncate">{r.fileName || 'roster_sheet.xlsx'}</span>
-                          </span>
+                            <Download className="w-3 h-3 shrink-0 ml-0.5" />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -200,7 +202,7 @@ export default function IngDashboard() {
                       <div className="flex justify-center">
                         {r.accountSheet ? (
                           <button
-                            onClick={() => handleDownloadSheet(r.accountSheet, r.id)}
+                            onClick={() => handleDownloadSheet(r.accountSheet, r.id, r.collegeName, r.program)}
                             className="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1 truncate max-w-[150px]"
                             title={`Download ${r.accountSheet.fileName}`}
                           >

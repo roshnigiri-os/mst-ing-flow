@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { MOCK_EXCEL_DATA_URL } from '../mock/initialData';
+import { handleSheetDownload } from '../utils/xlsxDownload';
 import StatCard from '../components/StatCard';
 import AssignMSTModal from '../components/AssignMSTModal';
 import AttachDocumentModal from '../components/AttachDocumentModal';
@@ -72,18 +72,15 @@ export default function MstDashboard() {
     return true;
   });
 
-  // CLEAN BINARY & EXCEL DOWNLOAD HANDLER FOR MST SPECIALIST
-  const handleDownloadSheet = (fileName, reqId, isAccountSheet = false, sheetUrl = null, fileDataUrl = null) => {
-    if (sheetUrl) {
-      window.open(sheetUrl, '_blank');
-      return;
-    }
-
-    const targetDataUrl = fileDataUrl || MOCK_EXCEL_DATA_URL;
-    const a = document.createElement('a');
-    a.href = targetDataUrl;
-    a.download = fileName || `${reqId}_${isAccountSheet ? 'account' : 'roster'}.xlsx`;
-    a.click();
+  // DOWNLOAD HANDLER – routes through SheetJS utility to prevent Excel format errors
+  const handleDownloadSheet = (fileName, reqId, isAccountSheet = false, sheetUrl = null, fileDataUrl = null, collegeName = '', program = '') => {
+    handleSheetDownload({
+      fileName: fileName || `${reqId}_${isAccountSheet ? 'account' : 'roster'}.xlsx`,
+      fileDataUrl,
+      sheetLink: sheetUrl,
+      collegeName,
+      program,
+    });
   };
 
   // INDEPENDENT HANDLER 1: Updates ONLY mid-table onboardingStatus
@@ -266,7 +263,7 @@ export default function MstDashboard() {
                             </a>
                           ) : (
                             <button
-                              onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.xlsx', r.id, false, null, r.fileDataUrl)}
+                              onClick={() => handleDownloadSheet(r.fileName || 'roster_sheet.xlsx', r.id, false, null, r.fileDataUrl, r.collegeName, r.program)}
                               className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-medium flex items-center gap-1 truncate max-w-[140px]"
                               title={`Download ${r.fileName || 'roster_sheet.xlsx'}`}
                             >
@@ -284,7 +281,7 @@ export default function MstDashboard() {
                           {r.accountSheet ? (
                             <div className="flex items-center gap-1">
                               <button
-                                onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink, r.accountSheet.fileDataUrl)}
+                                onClick={() => handleDownloadSheet(r.accountSheet.fileName, r.id, true, r.accountSheet.sheetLink, r.accountSheet.fileDataUrl, r.collegeName, r.program)}
                                 className="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-medium flex items-center gap-1 truncate max-w-[140px]"
                                 title={`Download ${r.accountSheet.fileName}`}
                               >
