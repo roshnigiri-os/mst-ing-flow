@@ -62,7 +62,7 @@ export default function Login() {
                 required
                 value={emailOrId}
                 onChange={(e) => setEmailOrId(e.target.value)}
-                placeholder="Enter User ID or Email (e.g. rep@apex.ing.edu)"
+                placeholder="Enter your Email (e.g. apexaccount@mst.sg)"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               />
             </div>

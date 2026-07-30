@@ -22,13 +22,14 @@ export function AuthProvider({ children }) {
         // Filter out legacy accounts
         const cleaned = parsed.filter(p => !LEGACY_EMAILS.includes(p.email?.toLowerCase()));
 
-        // Merge initial official 5 users while PRESERVING user-set custom passwords!
+        // Merge: always ENFORCE official INITIAL_USERS passwords (never trust stale localStorage passwords)
         const merged = INITIAL_USERS.map(initUser => {
           const found = cleaned.find(p => p.id === initUser.id || p.email?.toLowerCase() === initUser.email?.toLowerCase());
-          return found ? { ...initUser, ...found, password: found.password || initUser.password } : initUser;
+          // initUser.password always wins for the 5 official accounts (prevents stale/empty localStorage password bug)
+          return found ? { ...initUser, ...found, password: initUser.password } : initUser;
         });
 
-        // Append any custom registered users created by Admin
+        // Append any custom registered users created by Admin (non-official accounts)
         cleaned.forEach(p => {
           if (!merged.some(m => m.id === p.id || m.email?.toLowerCase() === p.email?.toLowerCase())) {
             merged.push(p);
